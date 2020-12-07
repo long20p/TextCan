@@ -8,8 +8,10 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using TextCan.Server.Services;
 
 namespace TextCan.Server
 {
@@ -25,11 +27,22 @@ namespace TextCan.Server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddCors(options =>
+            {
+                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                options.AddDefaultPolicy(builder =>
+                    builder.WithOrigins(allowedOrigins));
+            });
+
+            services.AddControllers();
+
+            var keyLength = Configuration.GetValue<int>("UniqueKeyLength");
+            services.AddSingleton<IUniqueKeyService, UniqueKeyService>(_ => new UniqueKeyService(keyLength));
+            services.AddSingleton<IContentService, ContentService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -41,7 +54,13 @@ namespace TextCan.Server
             }
 
             app.UseHttpsRedirection();
-            app.UseMvc();
+            app.UseCors();
+
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
         }
     }
 }
