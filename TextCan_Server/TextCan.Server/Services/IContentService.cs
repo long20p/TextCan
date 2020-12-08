@@ -8,7 +8,7 @@ namespace TextCan.Server.Services
 {
     public interface IContentService
     {
-        string CreateContent(ContentModel content);
-        ContentModel GetContent(string contentId);
+        Task<string> CreateContent(ContentModel content);
+        Task<ContentModel> GetContent(string contentId);
     }
 }

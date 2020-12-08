@@ -20,15 +20,16 @@ namespace TextCan.Server.Controllers
         }
 
         [HttpPost("create")]
-        public string CreateContent([FromBody] ContentModel model)
+        public async Task<string> CreateContent([FromBody] ContentModel model)
         {
-            return contentService.CreateContent(model);
+            return await contentService.CreateContent(model);
         }
 
         [HttpGet("get/{uniqueId}")]
-        public string GetContent(string uniqueId)
+        public async Task<string> GetContent(string uniqueId)
         {
-            return contentService.GetContent(uniqueId)?.Text;
+            var content = await contentService.GetContent(uniqueId);
+            return content?.Text;
         }
     }
 }

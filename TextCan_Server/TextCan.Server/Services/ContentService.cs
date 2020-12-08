@@ -3,34 +3,53 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TextCan.Server.Models;
+using TextCan.Server.Repository;
+using TextCan.Server.Repository.DbModels;
 
 namespace TextCan.Server.Services
 {
     public class ContentService : IContentService
     {
-        private Dictionary<string, ContentModel> contents;
+        private IContentRepository contentRepository;
         private IUniqueKeyService keyService;
 
-        public ContentService(IUniqueKeyService keyService)
+        public ContentService(IContentRepository contentRepository, IUniqueKeyService keyService)
         {
-            contents = new Dictionary<string, ContentModel>();
+            this.contentRepository = contentRepository;
             this.keyService = keyService;
         }
 
-        public string CreateContent(ContentModel content)
+        public async Task<string> CreateContent(ContentModel content)
         {
             var key = keyService.GetUniqueKey();
-            contents[key] = content;
+            var dbItem = new Content
+            {
+                Key = key,
+                Text = content.Text,
+                ExpireAt = content.ExpireAt.HasValue ? content.ExpireAt.Value.ToString("s") : null
+            };
+            await contentRepository.Add(dbItem);
             return key;
         }
 
-        public ContentModel GetContent(string contentId)
+        public async Task<ContentModel> GetContent(string contentId)
         {
-            if (!contents.ContainsKey(contentId))
+            var dbItem = await contentRepository.GetItem(contentId);
+            if (dbItem == null)
             {
                 return null;
             }
-            return contents[contentId];
+
+            DateTime? expireAt = null;
+            if (DateTime.TryParse(dbItem.ExpireAt, out var val))
+            {
+                expireAt = val;
+            }
+            return new ContentModel
+            {
+                Text = dbItem.Text,
+                ExpireAt = expireAt
+            };
         }
     }
 }
