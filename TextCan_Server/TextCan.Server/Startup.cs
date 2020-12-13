@@ -30,6 +30,7 @@ namespace TextCan.Server
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DbConfig>(Configuration.GetSection("Database"));
+            services.Configure<KeyServiceConfig>(Configuration.GetSection("KeyService"));
 
             services.AddCors(options =>
             {
@@ -43,7 +44,7 @@ namespace TextCan.Server
             var keyLength = Configuration.GetValue<int>("UniqueKeyLength");
             services.AddSingleton<IDbContext, DbContext>();
             services.AddSingleton<IContentRepository, ContentRepository>();
-            services.AddSingleton<IUniqueKeyService, UniqueKeyService>(_ => new UniqueKeyService(keyLength));
+            services.AddSingleton<IUniqueKeyService, UniqueKeyService>();
             services.AddSingleton<IContentService, ContentService>();
             services.AddSingleton<DbInitializer>();
         }

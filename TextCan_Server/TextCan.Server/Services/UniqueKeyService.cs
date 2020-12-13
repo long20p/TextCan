@@ -1,31 +1,32 @@
-﻿using System;
+﻿using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using TextCan.Server.Configs;
+using Newtonsoft.Json.Linq;
 
 namespace TextCan.Server.Services
 {
     public class UniqueKeyService : IUniqueKeyService
     {
-        private const string Characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        private int keyLength;
-        private Random rand;
+        private HttpClient httpClient;
+        private string keyServiceUrl;
 
-        public UniqueKeyService(int keyLength)
+        public UniqueKeyService(IOptions<KeyServiceConfig> config)
         {
-            this.keyLength = keyLength;
-            rand = new Random();
+            httpClient = new HttpClient();
+            keyServiceUrl = config.Value.GetKeyUrl;
         }
 
-        public string GetUniqueKey()
+        public async Task<string> GetUniqueKey()
         {
-            var sb = new StringBuilder();
-            for(int i = 0; i < keyLength; i++)
-            {
-                sb.Append(Characters[rand.Next(0, 62)]);
-            }
-            return sb.ToString();
+            var response = await httpClient.GetStringAsync(keyServiceUrl);
+            var token = JObject.Parse(response)["key"];
+            return token?.ToString();
         }
     }
 }

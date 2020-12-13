@@ -21,7 +21,11 @@ namespace TextCan.Server.Services
 
         public async Task<string> CreateContent(ContentModel content)
         {
-            var key = keyService.GetUniqueKey();
+            var key = await keyService.GetUniqueKey();
+            if (key ==null)
+            {
+                throw new InvalidOperationException("Cannot generate unique key");
+            }
             var dbItem = new Content
             {
                 Key = key,

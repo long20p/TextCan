@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace TextCan.Server.Services
+namespace TextCan.Server.Configs
 {
-    public interface IUniqueKeyService
+    public class KeyServiceConfig
     {
-        Task<string> GetUniqueKey();
+        public string GetKeyUrl { get; set; }
     }
 }
