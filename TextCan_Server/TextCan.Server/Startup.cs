@@ -36,7 +36,10 @@ namespace TextCan.Server
             {
                 var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
                 options.AddDefaultPolicy(builder =>
-                    builder.WithOrigins(allowedOrigins));
+                    builder
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
             });
 
             services.AddControllers();

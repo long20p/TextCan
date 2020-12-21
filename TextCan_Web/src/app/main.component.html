@@ -1,8 +1,8 @@
 <div class="main-content">
-  <form>
+  <form [formGroup]="contentForm" (ngSubmit)="onSubmit()">
     <div class="form-group">
-      <textarea class="form-control" rows="20" placeholder="Put your text here"></textarea>
+      <textarea class="form-control" rows="20" placeholder="Put your text here" formControlName="text" required></textarea>
     </div>
-    <button type="submit" class="btn btn-info btn-round btn-lg submitBtn">Create</button>
+    <button type="submit" class="btn btn-info btn-round btn-lg submitBtn" [disabled]="!contentForm.valid">Create</button>
   </form>
 </div>

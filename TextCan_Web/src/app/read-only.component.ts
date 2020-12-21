@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { ContentService } from './services/content.service';
 
 @Component({
   selector: 'app-read-only',
@@ -7,9 +9,16 @@ import { Component, OnInit } from '@angular/core';
 })
 export class ReadOnlyComponent implements OnInit {
 
-  constructor() { }
+  contentText: string;
+
+  constructor(private route: ActivatedRoute, private contentService: ContentService) { }
 
   ngOnInit() {
+    var key = this.route.snapshot.paramMap.get('uniqueKey');
+    this.contentService.getContent(key).subscribe({
+      next: content => this.contentText = content,
+      error: message => console.error(message)
+    })
   }
 
 }
