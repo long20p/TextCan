@@ -20,6 +20,10 @@ namespace TextCan.Server
 
         public static IHostBuilder CreateWebHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddEnvironmentVariables(prefix: "TextCan_");
+                })
                 .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>());
     }
 }

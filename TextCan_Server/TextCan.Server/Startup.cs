@@ -61,13 +61,13 @@ namespace TextCan.Server
             }
             else
             {
-                app.UseHsts();
+                //app.UseHsts();
             }
             
             // Init DB
             app.ApplicationServices.GetService(typeof(DbInitializer));
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseCors();
 
             app.UseRouting();
