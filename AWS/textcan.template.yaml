@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  ImageId:
+    Type: String
+    Default: ami-09e38a104c3562d7e
+    Description: AMI for the EC2 instance
+  KeyPair:
+    Type: String
+    Default: text-can-ec2-key
+    Description: Enter the name of a keypair to be used with the EC2 instances
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t1.micro
+      - t2.nano
+      - t2.micro
+    Description: Main server EC2 instance type
+Resources:
+  ContentDynamoTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: Key
+          AttributeType: S
+      BillingMode: PROVISIONED
+      KeySchema:
+        - AttributeName: Key
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1000'
+        WriteCapacityUnits: '1000'
+      TableName: Content
+  WebsiteInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref WebsiteInstanceSecurityGroup
+      KeyName: !Ref KeyPair
+      ImageId: !Ref ImageId
+      Tags:
+        - Key: Component
+          Value: Website
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash -x
+          cd /home/ec2-user/web
+          http-server -p 4200
+  ApiServerInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref ApiServerInstanceSecurityGroup
+      KeyName: !Ref KeyPair
+      ImageId: !Ref ImageId
+      IamInstanceProfile: !Ref ApiServerInstanceProfile
+      Tags:
+        - Key: Component
+          Value: ApiServer
+      UserData: 
+        Fn::Base64: !Sub |
+          #!/bin/bash -x
+          export TextCan_Database__EndpointUrl=https://dynamodb.${AWS::Region}.amazonaws.com
+          export TextCan_KeyService__GetKeyUrl=http://${KeyServiceInstance.PublicIp}:8083/key
+          cd /home/ec2-user/api-server
+          dotnet run
+    DependsOn: ContentDynamoTable
+  KeyServiceInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: !Ref InstanceType
+      SecurityGroups:
+        - !Ref KeyServiceInstanceSecurityGroup
+      KeyName: !Ref KeyPair
+      ImageId: !Ref ImageId
+      Tags:
+        - Key: Component
+          Value: Key generation service
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -x
+          cd /home/ec2-user/key-generation-service
+          python3 manage.py runserver 0.0.0.0:8083
+  WebsiteInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to service
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '4200'
+          ToPort: '4200'
+          CidrIp: 0.0.0.0/0
+  ApiServerInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to service
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '5000'
+          ToPort: '5000'
+          CidrIp: 0.0.0.0/0
+  KeyServiceInstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to key generation service
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '8083'
+          ToPort: '8083'
+          CidrIp: 0.0.0.0/0
+  ApiServerInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Path: /
+      Roles:
+        - text-can-dynamo-access
+Outputs:
+  PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value: !GetAtt 
+      - WebsiteInstance
+      - PublicDnsName
+  PublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value: !GetAtt 
+      - WebsiteInstance
+      - PublicIp
