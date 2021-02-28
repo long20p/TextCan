@@ -39,8 +39,8 @@ namespace TextCan.Server.Repository
                     },
                     ProvisionedThroughput = new ProvisionedThroughput
                     {
-                        ReadCapacityUnits = 1000,
-                        WriteCapacityUnits = 1000
+                        ReadCapacityUnits = 5,
+                        WriteCapacityUnits = 5
                     }
                 };
 

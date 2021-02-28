@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   ImageId:
     Type: String
-    Default: ami-09e38a104c3562d7e
+    Default: ami-09d2e79e17aeef8cd
     Description: AMI for the EC2 instance
   KeyPair:
     Type: String
@@ -28,8 +28,8 @@ Resources:
         - AttributeName: Key
           KeyType: HASH
       ProvisionedThroughput:
-        ReadCapacityUnits: '1000'
-        WriteCapacityUnits: '1000'
+        ReadCapacityUnits: '5'
+        WriteCapacityUnits: '5'
       TableName: Content
   WebsiteInstance:
     Type: 'AWS::EC2::Instance'
@@ -46,6 +46,7 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash -x
           cd /home/ec2-user/web
+          echo { '"baseUrl"': '"http://${ApiServerInstance.PublicIp}:5000/"' } > ./assets/settings.json
           http-server -p 4200
   ApiServerInstance:
     Type: 'AWS::EC2::Instance'
