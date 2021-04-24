@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
 
 namespace TextCan.Server
 {
@@ -15,7 +17,26 @@ namespace TextCan.Server
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+            Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .Enrich.FromLogContext()
+            .WriteTo.File("api-logs.log")
+            .WriteTo.Console()
+            .CreateLogger();
+
+            try
+            {
+                Log.Information("Starting web host");
+                CreateWebHostBuilder(args).Build().Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Host terminated unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
 
         public static IHostBuilder CreateWebHostBuilder(string[] args) =>
@@ -24,6 +45,7 @@ namespace TextCan.Server
                 {
                     config.AddEnvironmentVariables(prefix: "TextCan_");
                 })
+                .UseSerilog()
                 .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>());
     }
 }

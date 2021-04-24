@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +21,8 @@ namespace TextCan.Server
 {
     public class Startup
     {
+        private string CorsPolicy = "TextCanCorsPolicy";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -29,22 +33,28 @@ namespace TextCan.Server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<DbConfig>(Configuration.GetSection("Database"));
-            services.Configure<KeyServiceConfig>(Configuration.GetSection("KeyService"));
+            //services.Configure<DbConfig>(Configuration.GetSection("Database"));
+            //services.Configure<KeyServiceConfig>(Configuration.GetSection("KeyService"));
+            var dbConfig = Configuration.GetSection("Database").Get<DbConfig>();
+            dbConfig.EndpointUrl = File.ReadAllText("db.cfg");
+            var keySvcConfig = Configuration.GetSection("KeyService").Get<KeyServiceConfig>();
+            keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");
 
             services.AddCors(options =>
             {
-                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
-                options.AddDefaultPolicy(builder =>
+                //var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                options.AddPolicy(CorsPolicy, builder =>
                     builder
-                    .WithOrigins(allowedOrigins)
+                    //.WithOrigins(allowedOrigins)
+                    .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader());
             });
 
             services.AddControllers();
 
-            var keyLength = Configuration.GetValue<int>("UniqueKeyLength");
+            services.AddSingleton<DbConfig>(dbConfig);
+            services.AddSingleton<KeyServiceConfig>(keySvcConfig);
             services.AddSingleton<IDbContext, DbContext>();
             services.AddSingleton<IContentRepository, ContentRepository>();
             services.AddSingleton<IUniqueKeyService, UniqueKeyService>();
@@ -55,6 +65,11 @@ namespace TextCan.Server
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -68,9 +83,10 @@ namespace TextCan.Server
             app.ApplicationServices.GetService(typeof(DbInitializer));
 
             //app.UseHttpsRedirection();
-            app.UseCors();
 
             app.UseRouting();
+            app.UseCors(CorsPolicy);
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

@@ -12,13 +12,13 @@ namespace TextCan.Server.Repository
 {
     public class DbContext : IDbContext
     {
-        public DbContext(IOptions<DbConfig> dbConfig)
+        public DbContext(DbConfig dbConfig)
         {
-            if (dbConfig?.Value?.EndpointUrl != null)
+            if (dbConfig?.EndpointUrl != null)
             {
                 var config = new AmazonDynamoDBConfig
                 {
-                    ServiceURL = dbConfig.Value.EndpointUrl
+                    ServiceURL = dbConfig.EndpointUrl
                 };
                 Client = new AmazonDynamoDBClient(config);
             }

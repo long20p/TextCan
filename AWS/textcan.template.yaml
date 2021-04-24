@@ -4,6 +4,10 @@ Parameters:
     Type: String
     Default: ami-09d2e79e17aeef8cd
     Description: AMI for the EC2 instance
+  ApiImageId:
+    Type: String
+    Default: ami-09d9ce8f22d7bd8bb
+    Description: AMI for the API server
   KeyPair:
     Type: String
     Default: text-can-ec2-key
@@ -46,7 +50,7 @@ Resources:
         Fn::Base64: !Sub |
           #!/bin/bash -x
           cd /home/ec2-user/web
-          echo { '"baseUrl"': '"http://${ApiServerInstance.PublicIp}:5000/"' } > ./assets/settings.json
+          echo { '"baseUrl"': '"http://${ApiServerInstance.PublicIp}/"' } > ./assets/settings.json
           http-server -p 4200
   ApiServerInstance:
     Type: 'AWS::EC2::Instance'
@@ -55,7 +59,7 @@ Resources:
       SecurityGroups:
         - !Ref ApiServerInstanceSecurityGroup
       KeyName: !Ref KeyPair
-      ImageId: !Ref ImageId
+      ImageId: !Ref ApiImageId
       IamInstanceProfile: !Ref ApiServerInstanceProfile
       Tags:
         - Key: Component
@@ -63,10 +67,13 @@ Resources:
       UserData: 
         Fn::Base64: !Sub |
           #!/bin/bash -x
-          export TextCan_Database__EndpointUrl=https://dynamodb.${AWS::Region}.amazonaws.com
-          export TextCan_KeyService__GetKeyUrl=http://${KeyServiceInstance.PublicIp}:8083/key
-          cd /home/ec2-user/api-server
-          dotnet run
+          #sudo export TextCan_Database__EndpointUrl=https://dynamodb.${AWS::Region}.amazonaws.com
+          #sudo export TextCan_KeyService__GetKeyUrl=http://${KeyServiceInstance.PublicIp}:8083/key
+          sudo service nginx start
+          cd /home/ubuntu/api-server
+          echo https://dynamodb.${AWS::Region}.amazonaws.com > ./db.cfg
+          echo http://${KeyServiceInstance.PublicIp}:8083/key > ./key_svc.cfg
+          dotnet TextCan.Server.dll
     DependsOn: ContentDynamoTable
   KeyServiceInstance:
     Type: 'AWS::EC2::Instance'
@@ -107,8 +114,8 @@ Resources:
           ToPort: '22'
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
-          FromPort: '5000'
-          ToPort: '5000'
+          FromPort: '80'
+          ToPort: '80'
           CidrIp: 0.0.0.0/0
   KeyServiceInstanceSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

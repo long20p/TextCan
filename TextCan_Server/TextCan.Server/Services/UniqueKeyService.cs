@@ -8,18 +8,22 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TextCan.Server.Configs;
 using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace TextCan.Server.Services
 {
     public class UniqueKeyService : IUniqueKeyService
     {
+        private ILogger<UniqueKeyService> logger;
         private HttpClient httpClient;
         private string keyServiceUrl;
 
-        public UniqueKeyService(IOptions<KeyServiceConfig> config)
+        public UniqueKeyService(KeyServiceConfig config, ILogger<UniqueKeyService> logger)
         {
+            this.logger = logger;
             httpClient = new HttpClient();
-            keyServiceUrl = config.Value.GetKeyUrl;
+            keyServiceUrl = config.GetKeyUrl;
+            logger.LogInformation($"Key service address: {keyServiceUrl}");
         }
 
         public async Task<string> GetUniqueKey()
