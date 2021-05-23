@@ -4,23 +4,23 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace TextCan.Server.Repository
+namespace TextCan.Server.Repository.AWS
 {
-    public abstract class RepositoryBase<T> : IRepository<T>
+    public abstract class DynamoRepositoryBase<T> : IRepository<T>
     {
-        public RepositoryBase(IDbContext context)
+        protected DynamoRepositoryBase(IDynamoDbContext dbContext)
         {
-            Context = context;
+            Context = dbContext;
         }
 
-        protected IDbContext Context { get; }
-
-        public abstract Task EnsureTable();
+        protected IDynamoDbContext Context { get; }
 
         public async Task Add(T item)
         {
             await Context.Context.SaveAsync(item);
         }
+
+        public abstract Task EnsureTable();
 
         public async Task<T> GetItem(string key)
         {

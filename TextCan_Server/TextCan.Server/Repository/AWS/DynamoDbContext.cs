@@ -8,18 +8,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using TextCan.Server.Configs;
 
-namespace TextCan.Server.Repository
+namespace TextCan.Server.Repository.AWS
 {
-    public class DbContext : IDbContext
+    public class DynamoDbContext : IDynamoDbContext
     {
-        public DbContext(DbConfig dbConfig)
+        public DynamoDbContext(IOptions<DbConfig> dbConfig)
         {
-            if (dbConfig?.EndpointUrl != null)
+            if (dbConfig.Value.EndpointUrl != null)
             {
                 var config = new AmazonDynamoDBConfig
                 {
-                    ServiceURL = dbConfig.EndpointUrl
+                    ServiceURL = dbConfig.Value.EndpointUrl
                 };
+                Console.WriteLine(config.ServiceURL);
                 Client = new AmazonDynamoDBClient(config);
             }
             else

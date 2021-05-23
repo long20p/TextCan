@@ -18,11 +18,11 @@ namespace TextCan.Server.Services
         private HttpClient httpClient;
         private string keyServiceUrl;
 
-        public UniqueKeyService(KeyServiceConfig config, ILogger<UniqueKeyService> logger)
+        public UniqueKeyService(IOptions<KeyServiceConfig> config, ILogger<UniqueKeyService> logger)
         {
             this.logger = logger;
             httpClient = new HttpClient();
-            keyServiceUrl = config.GetKeyUrl;
+            keyServiceUrl = config.Value.GetKeyUrl;
             logger.LogInformation($"Key service address: {keyServiceUrl}");
         }
 

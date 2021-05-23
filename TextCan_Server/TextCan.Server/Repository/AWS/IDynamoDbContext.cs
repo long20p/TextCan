@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace TextCan.Server.Repository
+namespace TextCan.Server.Repository.AWS
 {
-    public interface IDbContext
+    public interface IDynamoDbContext
     {
         IAmazonDynamoDB Client { get; }
         IDynamoDBContext Context { get; }

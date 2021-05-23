@@ -1,3 +1,7 @@
+# Set host provider
+$env:TextCan_HostProvider = "AWS"
+$env:TextCan_Database__EndpointUrl = "http://localhost:8000"
+
 # Start DB
 Write-Host Start DynamoLocal DB
 Start-Process java -WorkingDirectory "./TextCan_Server/TestDb" -ArgumentList "-D'java.library.path=./DynamoDBLocal_lib'", "-jar", "DynamoDBLocal.jar", "-sharedDb"
