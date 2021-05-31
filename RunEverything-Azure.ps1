@@ -1,9 +1,10 @@
 # Set host provider
 $env:TextCan_HostProvider = "Azure"
-$env:TextCan_Database__EndpointUrl = "https://api-server.documents.azure.com:443/"
+$env:TextCan_Database__EndpointUrl = "https://localhost:8081"
 
 # Start DB
-
+Write-Host Start Cosmos DB emulator
+& "C:\Program Files\Azure Cosmos DB Emulator\Microsoft.Azure.Cosmos.Emulator.exe"
 
 # Start key generation service
 Write-Host Start key generation service

@@ -236,3 +236,6 @@ Pods
 
 #DynamoDBLocal
 TestDb/
+
+#Azure secrets
+/TextCan.Server/appsettings.Azure.json
