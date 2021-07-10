@@ -15,6 +15,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TextCan.Server.Configs;
 using TextCan.Server.Repository;
+using TextCan.Server.Repository.AWS;
+using TextCan.Server.Repository.Azure;
 using TextCan.Server.Services;
 
 namespace TextCan.Server
@@ -33,12 +35,13 @@ namespace TextCan.Server
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.Configure<DbConfig>(Configuration.GetSection("Database"));
-            //services.Configure<KeyServiceConfig>(Configuration.GetSection("KeyService"));
-            var dbConfig = Configuration.GetSection("Database").Get<DbConfig>();
-            dbConfig.EndpointUrl = File.ReadAllText("db.cfg");
-            var keySvcConfig = Configuration.GetSection("KeyService").Get<KeyServiceConfig>();
-            keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");
+            services.Configure<DbConfig>(Configuration.GetSection("Database"));
+            services.Configure<KeyServiceConfig>(Configuration.GetSection("KeyService"));
+            var hostProvider = Configuration.GetValue<string>("HostProvider");
+            //var dbConfig = Configuration.GetSection("Database").Get<DbConfig>();
+            //dbConfig.EndpointUrl = File.ReadAllText("db.cfg");
+            //var keySvcConfig = Configuration.GetSection("KeyService").Get<KeyServiceConfig>();
+            //keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");
 
             services.AddCors(options =>
             {
@@ -53,10 +56,25 @@ namespace TextCan.Server
 
             services.AddControllers();
 
-            services.AddSingleton<DbConfig>(dbConfig);
-            services.AddSingleton<KeyServiceConfig>(keySvcConfig);
-            services.AddSingleton<IDbContext, DbContext>();
-            services.AddSingleton<IContentRepository, ContentRepository>();
+            //services.AddSingleton<DbConfig>(dbConfig);
+            //services.AddSingleton<KeyServiceConfig>(keySvcConfig);
+
+            if (hostProvider == "AWS")
+            {
+                services.AddSingleton<DynamoDbContext>();
+                services.AddSingleton<IDynamoDbContext, DynamoDbContext>();
+                services.AddSingleton<IContentRepository, DynamoContentRepository>();
+            }
+            else if (hostProvider == "Azure")
+            {
+                services.AddSingleton<ICosmosDbContext, CosmosDbContext>();
+                services.AddSingleton<IContentRepository, CosmosContentRepository>();
+            }
+            else
+            {
+                throw new ApplicationException($"Unknown host provider: {hostProvider}");
+            }
+            
             services.AddSingleton<IUniqueKeyService, UniqueKeyService>();
             services.AddSingleton<IContentService, ContentService>();
             services.AddSingleton<DbInitializer>();

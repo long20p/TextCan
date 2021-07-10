@@ -5,11 +5,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using TextCan.Server.Repository.DbModels;
 
-namespace TextCan.Server.Repository
+namespace TextCan.Server.Repository.AWS
 {
-    public class ContentRepository : RepositoryBase<Content>, IContentRepository
+    public class DynamoContentRepository : DynamoRepositoryBase<Content>, IContentRepository
     {
-        public ContentRepository(IDbContext context) : base(context)
+        public DynamoContentRepository(IDynamoDbContext context) : base(context)
         {
         }
 

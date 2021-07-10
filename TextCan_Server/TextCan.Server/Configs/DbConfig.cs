@@ -8,5 +8,6 @@ namespace TextCan.Server.Configs
     public class DbConfig
     {
         public string EndpointUrl { get; set; }
+        public string Key { get; set; }
     }
 }

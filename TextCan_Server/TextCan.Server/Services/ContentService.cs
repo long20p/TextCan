@@ -28,6 +28,7 @@ namespace TextCan.Server.Services
             }
             var dbItem = new Content
             {
+                Id = key,
                 Key = key,
                 Text = content.Text,
                 ExpireAt = content.ExpireAt.HasValue ? content.ExpireAt.Value.ToString("s") : null
