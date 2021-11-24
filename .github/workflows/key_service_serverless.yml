@@ -5,6 +5,7 @@ on:
     branches: [ master ]
     paths:
     - 'KeyGenerationServiceServerless/**'
+    - '.github/workflows/key_service_serverless.yml'
   pull_request:
     branches: [ master ]
 
