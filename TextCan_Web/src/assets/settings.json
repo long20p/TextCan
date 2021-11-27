@@ -1,4 +1,3 @@
 {
-	//"baseUrl": "http://localhost:5000/"
-	"baseUrl": "https://web-contentapi-textcan-dev.azurewebsites.net"
+	"baseUrl": "https://web-contentapi-textcan-dev.azurewebsites.net/"
 }

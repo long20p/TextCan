@@ -10,7 +10,7 @@
             }
         },
         "api_server_name": {
-            "defaultValue": "textcan-api-server",
+            "defaultValue": "web-textcan-dev",
             "type": "String"
         },
         "key_generation_service_site_name": {
@@ -22,7 +22,7 @@
             "type": "String"
         },
         "serverfarms_plan_name": {
-            "defaultValue": "TextCanPlan789",
+            "defaultValue": "farm",
             "type": "String"
         }
     },
