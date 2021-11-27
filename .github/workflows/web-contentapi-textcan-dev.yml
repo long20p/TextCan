@@ -1,4 +1,4 @@
-name: Build and deploy .NET Core app to Linux WebApp web-contentapi-textcan-dev
+name: Build and deploy Content API to Linux WebApp web-contentapi-textcan-dev
 on:
   push:
     branches:
