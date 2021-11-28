@@ -5,6 +5,10 @@
         "databaseAccounts_cosmos_textcan_dev_createMode": {
             "type": "SecureString"
         },
+        "vaults_kv_textcan_dev_name": {
+            "defaultValue": "kv-textcan-dev",
+            "type": "String"
+        },
         "sites_web_contentapi_textcan_dev_name": {
             "defaultValue": "web-contentapi-textcan-dev",
             "type": "String"
@@ -15,6 +19,10 @@
         },
         "sites_func_keyservice_textcan_dev_name": {
             "defaultValue": "func-keyservice-textcan-dev",
+            "type": "String"
+        },
+        "staticSites_static_ui_textcan_dev_name": {
+            "defaultValue": "static-ui-textcan-dev",
             "type": "String"
         },
         "serverfarms_farm_contentapi_textcan_dev_name": {
@@ -126,6 +134,85 @@
             }
         },
         {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[parameters('vaults_kv_textcan_dev_name')]",
+            "location": "westeurope",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "3b9a4012-edfc-4812-863b-e74ce916744a",
+                "accessPolicies": [
+                    {
+                        "tenantId": "3b9a4012-edfc-4812-863b-e74ce916744a",
+                        "objectId": "e0edf4c1-e1fb-4dcd-8855-dd8d19e683d9",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "List",
+                                "Get"
+                            ],
+                            "certificates": []
+                        }
+                    },
+                    {
+                        "tenantId": "3b9a4012-edfc-4812-863b-e74ce916744a",
+                        "objectId": "558b9dac-3887-4de3-ae7a-15ef1cb770a9",
+                        "permissions": {
+                            "keys": [
+                                "Get",
+                                "List",
+                                "Update",
+                                "Create",
+                                "Import",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "secrets": [
+                                "Get",
+                                "List",
+                                "Set",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "certificates": [
+                                "Get",
+                                "List",
+                                "Update",
+                                "Create",
+                                "Import",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore",
+                                "ManageContacts",
+                                "ManageIssuers",
+                                "GetIssuers",
+                                "ListIssuers",
+                                "SetIssuers",
+                                "DeleteIssuers"
+                            ]
+                        }
+                    }
+                ],
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": false,
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 90,
+                "enableRbacAuthorization": false,
+                "vaultUri": "[concat('https://', parameters('vaults_kv_textcan_dev_name'), '.vault.azure.net/')]",
+                "provisioningState": "Succeeded",
+                "publicNetworkAccess": "Enabled"
+            }
+        },
+        {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2021-06-01",
             "name": "[parameters('storageAccounts_stkeysvcfunctextcandev_name')]",
@@ -213,6 +300,22 @@
             }
         },
         {
+            "type": "Microsoft.Web/staticSites",
+            "apiVersion": "2021-02-01",
+            "name": "[parameters('staticSites_static_ui_textcan_dev_name')]",
+            "location": "West Europe",
+            "sku": {
+                "name": "Free",
+                "tier": "Free"
+            },
+            "properties": {
+                "repositoryUrl": "https://github.com/long20p/TextCan",
+                "branch": "master",
+                "stagingEnvironmentPolicy": "Enabled",
+                "allowConfigFileUpdates": true
+            }
+        },
+        {
             "type": "microsoft.alertsmanagement/smartdetectoralertrules",
             "apiVersion": "2021-04-01",
             "name": "[parameters('smartdetectoralertrules_failure_anomalies___func_keyservice_textcan_dev_name')]",
@@ -235,6 +338,19 @@
                     "groupIds": [
                         "[parameters('actiongroups_application_insights_smart_detection_externalid')]"
                     ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+            "apiVersion": "2021-07-01-preview",
+            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/ApiServerDb')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
+            ],
+            "properties": {
+                "resource": {
+                    "id": "ApiServerDb"
                 }
             }
         },
@@ -615,6 +731,34 @@
             }
         },
         {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[concat(parameters('vaults_kv_textcan_dev_name'), '/ContentDatabaseKey')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaults_kv_textcan_dev_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[concat(parameters('vaults_kv_textcan_dev_name'), '/KeyServiceUrl')]",
+            "location": "westeurope",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaults_kv_textcan_dev_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                }
+            }
+        },
+        {
             "type": "Microsoft.Storage/storageAccounts/blobServices",
             "apiVersion": "2021-06-01",
             "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default')]",
@@ -768,12 +912,12 @@
                 "hyperV": false,
                 "siteConfig": {
                     "numberOfWorkers": 1,
-                    "linuxFxVersion": "DOTNETCORE|3.1",
+                    "linuxFxVersion": "DOTNETCORE|5.0",
                     "acrUseManagedIdentityCreds": false,
                     "alwaysOn": false,
                     "http20Enabled": false,
                     "functionAppScaleLimit": 0,
-                    "minimumElasticInstanceCount": 0
+                    "minimumElasticInstanceCount": 1
                 },
                 "scmSiteAlsoStopped": false,
                 "clientAffinityEnabled": true,
@@ -947,9 +1091,10 @@
                     "hostingstart.html"
                 ],
                 "netFrameworkVersion": "v4.0",
-                "linuxFxVersion": "DOTNETCORE|3.1",
+                "linuxFxVersion": "DOTNETCORE|5.0",
                 "requestTracingEnabled": false,
                 "remoteDebuggingEnabled": false,
+                "remoteDebuggingVersion": "VS2019",
                 "httpLoggingEnabled": false,
                 "acrUseManagedIdentityCreds": false,
                 "logsDirectorySizeLimit": 35,
@@ -1002,8 +1147,27 @@
                 "preWarmedInstanceCount": 0,
                 "functionAppScaleLimit": 0,
                 "functionsRuntimeScaleMonitoringEnabled": false,
-                "minimumElasticInstanceCount": 0,
+                "minimumElasticInstanceCount": 1,
                 "azureStorageAccounts": {}
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2021-02-01",
+            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/070e0a1aa51e46788de9cbe4ead74645')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY",
+                "message": "{\"type\":\"deployment\",\"sha\":\"26a5231a7c273a2a0e815be8c0ee477f88f1b67b\",\"repoName\":\"long20p/TextCan\",\"slotName\":\"production\",\"commitMessage\":\"Modify workflow files\"}",
+                "start_time": "2021-11-27T20:31:49.811892Z",
+                "end_time": "2021-11-27T20:31:52.0772972Z",
+                "active": true
             }
         },
         {
@@ -1022,7 +1186,7 @@
                 "message": "{\"type\":\"deployment\",\"sha\":\"e93d406c1ddfe81f5317012a17d0ca8be1e235f6\",\"repoName\":\"long20p/TextCan\",\"slotName\":\"production\",\"commitMessage\":\"Set up workflow for deploying Content API\"}",
                 "start_time": "2021-11-25T20:28:59.2677239Z",
                 "end_time": "2021-11-25T20:29:04.7863333Z",
-                "active": true
+                "active": false
             }
         },
         {
@@ -1042,6 +1206,25 @@
                 "start_time": "2021-11-25T20:40:28.0641557Z",
                 "end_time": "2021-11-25T20:40:32.0810045Z",
                 "active": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/deployments",
+            "apiVersion": "2021-02-01",
+            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/fbf228e432e54700b1118c37ba7c3ed0')]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
+            ],
+            "properties": {
+                "status": 4,
+                "author_email": "N/A",
+                "author": "N/A",
+                "deployer": "GITHUB_ZIP_DEPLOY",
+                "message": "{\"type\":\"deployment\",\"sha\":\"e93d406c1ddfe81f5317012a17d0ca8be1e235f6\",\"repoName\":\"long20p/TextCan\",\"slotName\":\"production\",\"commitMessage\":\"Set up workflow for deploying Content API\"}",
+                "start_time": "2021-11-27T19:26:25.6261989Z",
+                "end_time": "2021-11-27T19:26:28.81033Z",
+                "active": false
             }
         },
         {
@@ -1065,29 +1248,41 @@
             }
         },
         {
-            "type": "Microsoft.Web/sites/hostNameBindings",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '/', parameters('sites_func_keyservice_textcan_dev_name'), '.azurewebsites.net')]",
-            "location": "West Europe",
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+            "apiVersion": "2021-07-01-preview",
+            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/ApiServerDb/Content')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_func_keyservice_textcan_dev_name'))]"
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'ApiServerDb')]",
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
             ],
             "properties": {
-                "siteName": "func-keyservice-textcan-dev",
-                "hostNameType": "Verified"
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/hostNameBindings",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/', parameters('sites_web_contentapi_textcan_dev_name'), '.azurewebsites.net')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "siteName": "web-contentapi-textcan-dev",
-                "hostNameType": "Verified"
+                "resource": {
+                    "id": "Content",
+                    "indexingPolicy": {
+                        "indexingMode": "consistent",
+                        "automatic": true,
+                        "includedPaths": [
+                            {
+                                "path": "/*"
+                            }
+                        ],
+                        "excludedPaths": [
+                            {
+                                "path": "/\"_etag\"/?"
+                            }
+                        ]
+                    },
+                    "partitionKey": {
+                        "paths": [
+                            "/Key"
+                        ],
+                        "kind": "Hash"
+                    },
+                    "conflictResolutionPolicy": {
+                        "mode": "LastWriterWins",
+                        "conflictResolutionPath": "/_ts"
+                    }
+                }
             }
         },
         {
@@ -1194,6 +1389,21 @@
                 "accessTier": "TransactionOptimized",
                 "shareQuota": 5120,
                 "enabledProtocols": "SMB"
+            }
+        },
+        {
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/throughputSettings",
+            "apiVersion": "2021-07-01-preview",
+            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/ApiServerDb/Content/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'ApiServerDb', 'Content')]",
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'ApiServerDb')]",
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
+            ],
+            "properties": {
+                "resource": {
+                    "throughput": 400
+                }
             }
         }
     ]
