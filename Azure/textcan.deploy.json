@@ -2,65 +2,44 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "databaseAccounts_cosmos_textcan_dev_createMode": {
-            "type": "SecureString"
+        "environment": {
+            "defaultValue": "dev",
+            "type": "string"
         },
-        "vaults_kv_textcan_dev_name": {
-            "defaultValue": "kv-textcan-dev",
-            "type": "String"
-        },
-        "sites_web_contentapi_textcan_dev_name": {
-            "defaultValue": "web-contentapi-textcan-dev",
-            "type": "String"
-        },
-        "serverfarms_ASP_rgtextcandev_bd9b_name": {
-            "defaultValue": "ASP-rgtextcandev-bd9b",
-            "type": "String"
-        },
-        "sites_func_keyservice_textcan_dev_name": {
-            "defaultValue": "func-keyservice-textcan-dev",
-            "type": "String"
-        },
-        "staticSites_static_ui_textcan_dev_name": {
-            "defaultValue": "static-ui-textcan-dev",
-            "type": "String"
-        },
-        "serverfarms_farm_contentapi_textcan_dev_name": {
-            "defaultValue": "farm-contentapi-textcan-dev",
-            "type": "String"
-        },
-        "databaseAccounts_cosmos_textcan_dev_name": {
-            "defaultValue": "cosmos-textcan-dev",
-            "type": "String"
-        },
-        "storageAccounts_stkeysvcfunctextcandev_name": {
-            "defaultValue": "stkeysvcfunctextcandev",
-            "type": "String"
-        },
-        "components_func_keyservice_textcan_dev_name": {
-            "defaultValue": "func-keyservice-textcan-dev",
-            "type": "String"
-        },
-        "smartdetectoralertrules_failure_anomalies___func_keyservice_textcan_dev_name": {
-            "defaultValue": "failure anomalies - func-keyservice-textcan-dev",
-            "type": "String"
-        },
-        "actiongroups_application_insights_smart_detection_externalid": {
-            "defaultValue": "/subscriptions/8ed0499b-aa94-493a-a3e6-f69a9bb7e520/resourceGroups/uniqueidhandlerworkflow/providers/microsoft.insights/actiongroups/application insights smart detection",
-            "type": "String"
-        },
-        "workspaces_DefaultWorkspace_8ed0499b_aa94_493a_a3e6_f69a9bb7e520_WEU_externalid": {
-            "defaultValue": "/subscriptions/8ed0499b-aa94-493a-a3e6-f69a9bb7e520/resourceGroups/DefaultResourceGroup-WEU/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-8ed0499b-aa94-493a-a3e6-f69a9bb7e520-WEU",
-            "type": "String"
+        "enableCosmosFreeTier": {
+            "defaultValue": false,
+            "type": "bool"
         }
     },
-    "variables": {},
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "kv_name": "[concat('kv-textcan-', parameters('environment'))]",
+        "app_content_api_name": "[concat('app-contentapi-textcan-', parameters('environment'))]",
+        "plan_func_key_service_name": "[concat('plan-keyservice-textcan-', parameters('environment'))]",
+        "func_key_service_name": "[concat('func-keyservice-textcan-', parameters('environment'))]",
+        "static_ui_name": "[concat('static-ui-textcan-', parameters('environment'))]",
+        "plan_content_api_name": "[concat('plan-contentapi-textcan-', parameters('environment'))]",
+        "cosmos_db_account_name": "[concat('cosmos-content-textcan-', parameters('environment'))]",
+        "storage_account_key_service_func_name": "[concat('stkeysvcfunctextcan', parameters('environment'))]",
+        "appi_func_key_service_name": "[concat('appi-keyservice-textcan-', parameters('environment'))]",
+        "logan_appi_func_key_service_name": "[concat('logan-appi-keyservice-textcan-', parameters('environment'))]",
+        "content-db-name": "TextCanContentDB",
+        "content-container-name": "Content",
+        "content-db-key-secret-name": "ContentDatabaseKey",
+        "func-key-secret-name": "KeyServiceUrl",
+        "func-keygen-name": "KeyGenerator",
+        "cosmos-acc-resource-id": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmos_db_account_name'))]",
+        "db-key-secret-resource-id": "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('kv_name'), variables('content-db-key-secret-name'))]",
+        "func-key-secret-resource-id": "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('kv_name'), variables('func-key-secret-name'))]"
+    },
     "resources": [
         {
+            /********************** Cosmos DB start **********************/
+
             "type": "Microsoft.DocumentDB/databaseAccounts",
             "apiVersion": "2021-07-01-preview",
-            "name": "[parameters('databaseAccounts_cosmos_textcan_dev_name')]",
-            "location": "West Europe",
+            "name": "[variables('cosmos_db_account_name')]",
+            "location": "[variables('location')]",
             "tags": {
                 "defaultExperience": "Core (SQL)",
                 "hidden-cosmos-mmspecial": ""
@@ -70,21 +49,11 @@
                 "type": "None"
             },
             "properties": {
-                "publicNetworkAccess": "Enabled",
-                "enableAutomaticFailover": false,
                 "enableMultipleWriteLocations": false,
                 "isVirtualNetworkFilterEnabled": false,
                 "virtualNetworkRules": [],
-                "disableKeyBasedMetadataWriteAccess": false,
-                "enableFreeTier": true,
-                "enableAnalyticalStorage": false,
-                "analyticalStorageConfiguration": {
-                    "schemaType": "WellDefined"
-                },
+                "enableFreeTier": "[parameters('enableCosmosFreeTier')]",
                 "databaseAccountOfferType": "Standard",
-                "defaultIdentity": "FirstPartyIdentity",
-                "networkAclBypass": "None",
-                "disableLocalAuth": false,
                 "consistencyPolicy": {
                     "defaultConsistencyLevel": "Session",
                     "maxIntervalInSeconds": 5,
@@ -92,10 +61,8 @@
                 },
                 "locations": [
                     {
-                        "locationName": "West Europe",
-                        "provisioningState": "Succeeded",
-                        "failoverPriority": 0,
-                        "isZoneRedundant": false
+                        "locationName": "[variables('location')]",
+                        "failoverPriority": 0
                     }
                 ],
                 "cors": [],
@@ -109,1193 +76,32 @@
                         "backupStorageRedundancy": "Geo"
                     }
                 },
-                "networkAclBypassResourceIds": [],
-                "diagnosticLogSettings": {
-                    "enableFullTextQuery": "None"
-                },
-                "createMode": "[parameters('databaseAccounts_cosmos_textcan_dev_createMode')]"
-            }
-        },
-        {
-            "type": "microsoft.insights/components",
-            "apiVersion": "2020-02-02",
-            "name": "[parameters('components_func_keyservice_textcan_dev_name')]",
-            "location": "westeurope",
-            "kind": "web",
-            "properties": {
-                "Application_Type": "web",
-                "Flow_Type": "Redfield",
-                "Request_Source": "IbizaWebAppExtensionCreate",
-                "RetentionInDays": 90,
-                "WorkspaceResourceId": "[parameters('workspaces_DefaultWorkspace_8ed0499b_aa94_493a_a3e6_f69a9bb7e520_WEU_externalid')]",
-                "IngestionMode": "LogAnalytics",
-                "publicNetworkAccessForIngestion": "Enabled",
-                "publicNetworkAccessForQuery": "Enabled"
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults",
-            "apiVersion": "2021-06-01-preview",
-            "name": "[parameters('vaults_kv_textcan_dev_name')]",
-            "location": "westeurope",
-            "properties": {
-                "sku": {
-                    "family": "A",
-                    "name": "Standard"
-                },
-                "tenantId": "3b9a4012-edfc-4812-863b-e74ce916744a",
-                "accessPolicies": [
-                    {
-                        "tenantId": "3b9a4012-edfc-4812-863b-e74ce916744a",
-                        "objectId": "e0edf4c1-e1fb-4dcd-8855-dd8d19e683d9",
-                        "permissions": {
-                            "keys": [],
-                            "secrets": [
-                                "List",
-                                "Get"
-                            ],
-                            "certificates": []
-                        }
-                    },
-                    {
-                        "tenantId": "3b9a4012-edfc-4812-863b-e74ce916744a",
-                        "objectId": "558b9dac-3887-4de3-ae7a-15ef1cb770a9",
-                        "permissions": {
-                            "keys": [
-                                "Get",
-                                "List",
-                                "Update",
-                                "Create",
-                                "Import",
-                                "Delete",
-                                "Recover",
-                                "Backup",
-                                "Restore"
-                            ],
-                            "secrets": [
-                                "Get",
-                                "List",
-                                "Set",
-                                "Delete",
-                                "Recover",
-                                "Backup",
-                                "Restore"
-                            ],
-                            "certificates": [
-                                "Get",
-                                "List",
-                                "Update",
-                                "Create",
-                                "Import",
-                                "Delete",
-                                "Recover",
-                                "Backup",
-                                "Restore",
-                                "ManageContacts",
-                                "ManageIssuers",
-                                "GetIssuers",
-                                "ListIssuers",
-                                "SetIssuers",
-                                "DeleteIssuers"
-                            ]
-                        }
-                    }
-                ],
-                "enabledForDeployment": false,
-                "enabledForDiskEncryption": false,
-                "enabledForTemplateDeployment": false,
-                "enableSoftDelete": true,
-                "softDeleteRetentionInDays": 90,
-                "enableRbacAuthorization": false,
-                "vaultUri": "[concat('https://', parameters('vaults_kv_textcan_dev_name'), '.vault.azure.net/')]",
-                "provisioningState": "Succeeded",
-                "publicNetworkAccess": "Enabled"
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2021-06-01",
-            "name": "[parameters('storageAccounts_stkeysvcfunctextcandev_name')]",
-            "location": "westeurope",
-            "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
-            },
-            "kind": "Storage",
-            "properties": {
-                "minimumTlsVersion": "TLS1_2",
-                "allowBlobPublicAccess": true,
-                "networkAcls": {
-                    "bypass": "AzureServices",
-                    "virtualNetworkRules": [],
-                    "ipRules": [],
-                    "defaultAction": "Allow"
-                },
-                "supportsHttpsTrafficOnly": true,
-                "encryption": {
-                    "services": {
-                        "file": {
-                            "keyType": "Account",
-                            "enabled": true
-                        },
-                        "blob": {
-                            "keyType": "Account",
-                            "enabled": true
-                        }
-                    },
-                    "keySource": "Microsoft.Storage"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Web/serverfarms",
-            "apiVersion": "2021-02-01",
-            "name": "[parameters('serverfarms_ASP_rgtextcandev_bd9b_name')]",
-            "location": "West Europe",
-            "sku": {
-                "name": "Y1",
-                "tier": "Dynamic",
-                "size": "Y1",
-                "family": "Y",
-                "capacity": 0
-            },
-            "kind": "functionapp",
-            "properties": {
-                "perSiteScaling": false,
-                "elasticScaleEnabled": false,
-                "maximumElasticWorkerCount": 1,
-                "isSpot": false,
-                "reserved": false,
-                "isXenon": false,
-                "hyperV": false,
-                "targetWorkerCount": 0,
-                "targetWorkerSizeId": 0,
-                "zoneRedundant": false
-            }
-        },
-        {
-            "type": "Microsoft.Web/serverfarms",
-            "apiVersion": "2021-02-01",
-            "name": "[parameters('serverfarms_farm_contentapi_textcan_dev_name')]",
-            "location": "West Europe",
-            "sku": {
-                "name": "S1",
-                "tier": "Standard",
-                "size": "S1",
-                "family": "S",
-                "capacity": 1
-            },
-            "kind": "linux",
-            "properties": {
-                "perSiteScaling": false,
-                "elasticScaleEnabled": false,
-                "maximumElasticWorkerCount": 1,
-                "isSpot": false,
-                "reserved": true,
-                "isXenon": false,
-                "hyperV": false,
-                "targetWorkerCount": 0,
-                "targetWorkerSizeId": 0,
-                "zoneRedundant": false
-            }
-        },
-        {
-            "type": "Microsoft.Web/staticSites",
-            "apiVersion": "2021-02-01",
-            "name": "[parameters('staticSites_static_ui_textcan_dev_name')]",
-            "location": "West Europe",
-            "sku": {
-                "name": "Free",
-                "tier": "Free"
-            },
-            "properties": {
-                "repositoryUrl": "https://github.com/long20p/TextCan",
-                "branch": "master",
-                "stagingEnvironmentPolicy": "Enabled",
-                "allowConfigFileUpdates": true
-            }
-        },
-        {
-            "type": "microsoft.alertsmanagement/smartdetectoralertrules",
-            "apiVersion": "2021-04-01",
-            "name": "[parameters('smartdetectoralertrules_failure_anomalies___func_keyservice_textcan_dev_name')]",
-            "location": "global",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "description": "Failure Anomalies notifies you of an unusual rise in the rate of failed HTTP requests or dependency calls.",
-                "state": "Enabled",
-                "severity": "Sev3",
-                "frequency": "PT1M",
-                "detector": {
-                    "id": "FailureAnomaliesDetector"
-                },
-                "scope": [
-                    "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-                ],
-                "actionGroups": {
-                    "groupIds": [
-                        "[parameters('actiongroups_application_insights_smart_detection_externalid')]"
-                    ]
-                }
+                "createMode": "Default"
             }
         },
         {
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
             "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/ApiServerDb')]",
+            "name": "[concat(variables('cosmos_db_account_name'), '/', variables('content-db-name'))]",
             "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
+                "[variables('cosmos-acc-resource-id')]"
             ],
             "properties": {
                 "resource": {
-                    "id": "ApiServerDb"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
-            "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/TextCanContentDB')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "resource": {
-                    "id": "TextCanContentDB"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions",
-            "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/00000000-0000-0000-0000-000000000001')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "roleName": "Cosmos DB Built-in Data Reader",
-                "type": 0,
-                "assignableScopes": [
-                    "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-                ],
-                "permissions": [
-                    {
-                        "dataActions": [
-                            "Microsoft.DocumentDB/databaseAccounts/readMetadata",
-                            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/executeQuery",
-                            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/readChangeFeed",
-                            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/read"
-                        ],
-                        "notDataActions": []
-                    }
-                ]
-            }
-        },
-        {
-            "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions",
-            "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/00000000-0000-0000-0000-000000000002')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "roleName": "Cosmos DB Built-in Data Contributor",
-                "type": 0,
-                "assignableScopes": [
-                    "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-                ],
-                "permissions": [
-                    {
-                        "dataActions": [
-                            "Microsoft.DocumentDB/databaseAccounts/readMetadata",
-                            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/*",
-                            "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/items/*"
-                        ],
-                        "notDataActions": []
-                    }
-                ]
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/degradationindependencyduration')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "degradationindependencyduration",
-                    "DisplayName": "Degradation in dependency duration",
-                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
-                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": false,
-                    "SupportsEmailNotifications": true
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/degradationinserverresponsetime')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "degradationinserverresponsetime",
-                    "DisplayName": "Degradation in server response time",
-                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
-                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": false,
-                    "SupportsEmailNotifications": true
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/digestMailConfiguration')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "digestMailConfiguration",
-                    "DisplayName": "Digest Mail Configuration",
-                    "Description": "This rule describes the digest mail preferences",
-                    "HelpUrl": "www.homail.com",
-                    "IsHidden": true,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": false,
-                    "SupportsEmailNotifications": true
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/extension_billingdatavolumedailyspikeextension')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "extension_billingdatavolumedailyspikeextension",
-                    "DisplayName": "Abnormal rise in daily data volume (preview)",
-                    "Description": "This detection rule automatically analyzes the billing data generated by your application, and can warn you about an unusual increase in your application's billing costs",
-                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/tree/master/SmartDetection/billing-data-volume-daily-spike.md",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/extension_canaryextension')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "extension_canaryextension",
-                    "DisplayName": "Canary extension",
-                    "Description": "Canary extension",
-                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/",
-                    "IsHidden": true,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/extension_exceptionchangeextension')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "extension_exceptionchangeextension",
-                    "DisplayName": "Abnormal rise in exception volume (preview)",
-                    "Description": "This detection rule automatically analyzes the exceptions thrown in your application, and can warn you about unusual patterns in your exception telemetry.",
-                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/abnormal-rise-in-exception-volume.md",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/extension_memoryleakextension')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "extension_memoryleakextension",
-                    "DisplayName": "Potential memory leak detected (preview)",
-                    "Description": "This detection rule automatically analyzes the memory consumption of each process in your application, and can warn you about potential memory leaks or increased memory consumption.",
-                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/tree/master/SmartDetection/memory-leak.md",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/extension_securityextensionspackage')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "extension_securityextensionspackage",
-                    "DisplayName": "Potential security issue detected (preview)",
-                    "Description": "This detection rule automatically analyzes the telemetry generated by your application and detects potential security issues.",
-                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/application-security-detection-pack.md",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/extension_traceseveritydetector')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "extension_traceseveritydetector",
-                    "DisplayName": "Degradation in trace severity ratio (preview)",
-                    "Description": "This detection rule automatically analyzes the trace logs emitted from your application, and can warn you about unusual patterns in the severity of your trace telemetry.",
-                    "HelpUrl": "https://github.com/Microsoft/ApplicationInsights-Home/blob/master/SmartDetection/degradation-in-trace-severity-ratio.md",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/longdependencyduration')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "longdependencyduration",
-                    "DisplayName": "Long dependency duration",
-                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
-                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": false,
-                    "SupportsEmailNotifications": true
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/migrationToAlertRulesCompleted')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "migrationToAlertRulesCompleted",
-                    "DisplayName": "Migration To Alert Rules Completed",
-                    "Description": "A configuration that controls the migration state of Smart Detection to Smart Alerts",
-                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
-                    "IsHidden": true,
-                    "IsEnabledByDefault": false,
-                    "IsInPreview": true,
-                    "SupportsEmailNotifications": false
-                },
-                "enabled": false,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/slowpageloadtime')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "slowpageloadtime",
-                    "DisplayName": "Slow page load time",
-                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
-                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": false,
-                    "SupportsEmailNotifications": true
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "microsoft.insights/components/ProactiveDetectionConfigs",
-            "apiVersion": "2018-05-01-preview",
-            "name": "[concat(parameters('components_func_keyservice_textcan_dev_name'), '/slowserverresponsetime')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('microsoft.insights/components', parameters('components_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "ruleDefinitions": {
-                    "Name": "slowserverresponsetime",
-                    "DisplayName": "Slow server response time",
-                    "Description": "Smart Detection rules notify you of performance anomaly issues.",
-                    "HelpUrl": "https://docs.microsoft.com/en-us/azure/application-insights/app-insights-proactive-performance-diagnostics",
-                    "IsHidden": false,
-                    "IsEnabledByDefault": true,
-                    "IsInPreview": false,
-                    "SupportsEmailNotifications": true
-                },
-                "enabled": true,
-                "sendEmailsToSubscriptionOwners": true,
-                "customEmails": []
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/secrets",
-            "apiVersion": "2021-06-01-preview",
-            "name": "[concat(parameters('vaults_kv_textcan_dev_name'), '/ContentDatabaseKey')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaults_kv_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "attributes": {
-                    "enabled": true
-                }
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/secrets",
-            "apiVersion": "2021-06-01-preview",
-            "name": "[concat(parameters('vaults_kv_textcan_dev_name'), '/KeyServiceUrl')]",
-            "location": "westeurope",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', parameters('vaults_kv_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "attributes": {
-                    "enabled": true
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/blobServices",
-            "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
-            ],
-            "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
-            },
-            "properties": {
-                "cors": {
-                    "corsRules": []
-                },
-                "deleteRetentionPolicy": {
-                    "enabled": false
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/fileServices",
-            "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
-            ],
-            "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
-            },
-            "properties": {
-                "protocolSettings": {
-                    "smb": {}
-                },
-                "cors": {
-                    "corsRules": []
-                },
-                "shareDeleteRetentionPolicy": {
-                    "enabled": true,
-                    "days": 7
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/queueServices",
-            "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
-            ],
-            "properties": {
-                "cors": {
-                    "corsRules": []
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/tableServices",
-            "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
-            ],
-            "properties": {
-                "cors": {
-                    "corsRules": []
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites",
-            "apiVersion": "2021-02-01",
-            "name": "[parameters('sites_func_keyservice_textcan_dev_name')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_rgtextcandev_bd9b_name'))]"
-            ],
-            "kind": "functionapp",
-            "properties": {
-                "enabled": true,
-                "hostNameSslStates": [
-                    {
-                        "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Standard"
-                    },
-                    {
-                        "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '.scm.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Repository"
-                    }
-                ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_ASP_rgtextcandev_bd9b_name'))]",
-                "reserved": false,
-                "isXenon": false,
-                "hyperV": false,
-                "siteConfig": {
-                    "numberOfWorkers": 1,
-                    "acrUseManagedIdentityCreds": false,
-                    "alwaysOn": false,
-                    "http20Enabled": false,
-                    "functionAppScaleLimit": 200,
-                    "minimumElasticInstanceCount": 0
-                },
-                "scmSiteAlsoStopped": false,
-                "clientAffinityEnabled": false,
-                "clientCertEnabled": false,
-                "clientCertMode": "Required",
-                "hostNamesDisabled": false,
-                "customDomainVerificationId": "C5F578C6FCBA3DD048104990038976258E1A9B0C78D4DC0454E8C58A3F189209",
-                "containerSize": 1536,
-                "dailyMemoryTimeQuota": 0,
-                "httpsOnly": false,
-                "redundancyMode": "None",
-                "storageAccountRequired": false,
-                "keyVaultReferenceIdentity": "SystemAssigned"
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites",
-            "apiVersion": "2021-02-01",
-            "name": "[parameters('sites_web_contentapi_textcan_dev_name')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_farm_contentapi_textcan_dev_name'))]"
-            ],
-            "tags": {
-                "hidden-related:/subscriptions/8ed0499b-aa94-493a-a3e6-f69a9bb7e520/resourceGroups/rg-textcan-dev/providers/Microsoft.Web/serverFarms/farm-contentapi-textcan-dev": "empty"
-            },
-            "kind": "app,linux",
-            "identity": {
-                "type": "SystemAssigned"
-            },
-            "properties": {
-                "enabled": true,
-                "hostNameSslStates": [
-                    {
-                        "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Standard"
-                    },
-                    {
-                        "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '.scm.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Repository"
-                    }
-                ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('serverfarms_farm_contentapi_textcan_dev_name'))]",
-                "reserved": true,
-                "isXenon": false,
-                "hyperV": false,
-                "siteConfig": {
-                    "numberOfWorkers": 1,
-                    "linuxFxVersion": "DOTNETCORE|5.0",
-                    "acrUseManagedIdentityCreds": false,
-                    "alwaysOn": false,
-                    "http20Enabled": false,
-                    "functionAppScaleLimit": 0,
-                    "minimumElasticInstanceCount": 1
-                },
-                "scmSiteAlsoStopped": false,
-                "clientAffinityEnabled": true,
-                "clientCertEnabled": false,
-                "clientCertMode": "Required",
-                "hostNamesDisabled": false,
-                "customDomainVerificationId": "C5F578C6FCBA3DD048104990038976258E1A9B0C78D4DC0454E8C58A3F189209",
-                "containerSize": 0,
-                "dailyMemoryTimeQuota": 0,
-                "httpsOnly": true,
-                "redundancyMode": "None",
-                "storageAccountRequired": false,
-                "keyVaultReferenceIdentity": "SystemAssigned"
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '/ftp')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "allow": true
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/ftp')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "tags": {
-                "hidden-related:/subscriptions/8ed0499b-aa94-493a-a3e6-f69a9bb7e520/resourceGroups/rg-textcan-dev/providers/Microsoft.Web/serverFarms/farm-contentapi-textcan-dev": "empty"
-            },
-            "properties": {
-                "allow": true
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '/scm')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "allow": true
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/basicPublishingCredentialsPolicies",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/scm')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "tags": {
-                "hidden-related:/subscriptions/8ed0499b-aa94-493a-a3e6-f69a9bb7e520/resourceGroups/rg-textcan-dev/providers/Microsoft.Web/serverFarms/farm-contentapi-textcan-dev": "empty"
-            },
-            "properties": {
-                "allow": true
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/config",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '/web')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "numberOfWorkers": 1,
-                "defaultDocuments": [
-                    "Default.htm",
-                    "Default.html",
-                    "Default.asp",
-                    "index.htm",
-                    "index.html",
-                    "iisstart.htm",
-                    "default.aspx",
-                    "index.php"
-                ],
-                "netFrameworkVersion": "v6.0",
-                "phpVersion": "5.6",
-                "requestTracingEnabled": false,
-                "remoteDebuggingEnabled": false,
-                "httpLoggingEnabled": false,
-                "acrUseManagedIdentityCreds": false,
-                "logsDirectorySizeLimit": 35,
-                "detailedErrorLoggingEnabled": false,
-                "publishingUsername": "$func-keyservice-textcan-dev",
-                "scmType": "None",
-                "use32BitWorkerProcess": true,
-                "webSocketsEnabled": false,
-                "alwaysOn": false,
-                "managedPipelineMode": "Integrated",
-                "virtualApplications": [
-                    {
-                        "virtualPath": "/",
-                        "physicalPath": "site\\wwwroot",
-                        "preloadEnabled": false
-                    }
-                ],
-                "loadBalancing": "LeastRequests",
-                "experiments": {
-                    "rampUpRules": []
-                },
-                "autoHealEnabled": false,
-                "vnetRouteAllEnabled": false,
-                "vnetPrivatePortsCount": 0,
-                "localMySqlEnabled": false,
-                "ipSecurityRestrictions": [
-                    {
-                        "ipAddress": "Any",
-                        "action": "Allow",
-                        "priority": 1,
-                        "name": "Allow all",
-                        "description": "Allow all access"
-                    }
-                ],
-                "scmIpSecurityRestrictions": [
-                    {
-                        "ipAddress": "Any",
-                        "action": "Allow",
-                        "priority": 1,
-                        "name": "Allow all",
-                        "description": "Allow all access"
-                    }
-                ],
-                "scmIpSecurityRestrictionsUseMain": false,
-                "http20Enabled": false,
-                "minTlsVersion": "1.2",
-                "scmMinTlsVersion": "1.0",
-                "ftpsState": "AllAllowed",
-                "preWarmedInstanceCount": 0,
-                "functionAppScaleLimit": 200,
-                "functionsRuntimeScaleMonitoringEnabled": false,
-                "minimumElasticInstanceCount": 0,
-                "azureStorageAccounts": {}
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/config",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/web')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "tags": {
-                "hidden-related:/subscriptions/8ed0499b-aa94-493a-a3e6-f69a9bb7e520/resourceGroups/rg-textcan-dev/providers/Microsoft.Web/serverFarms/farm-contentapi-textcan-dev": "empty"
-            },
-            "properties": {
-                "numberOfWorkers": 1,
-                "defaultDocuments": [
-                    "Default.htm",
-                    "Default.html",
-                    "Default.asp",
-                    "index.htm",
-                    "index.html",
-                    "iisstart.htm",
-                    "default.aspx",
-                    "index.php",
-                    "hostingstart.html"
-                ],
-                "netFrameworkVersion": "v4.0",
-                "linuxFxVersion": "DOTNETCORE|5.0",
-                "requestTracingEnabled": false,
-                "remoteDebuggingEnabled": false,
-                "remoteDebuggingVersion": "VS2019",
-                "httpLoggingEnabled": false,
-                "acrUseManagedIdentityCreds": false,
-                "logsDirectorySizeLimit": 35,
-                "detailedErrorLoggingEnabled": false,
-                "publishingUsername": "$web-contentapi-textcan-dev",
-                "scmType": "None",
-                "use32BitWorkerProcess": true,
-                "webSocketsEnabled": false,
-                "alwaysOn": false,
-                "managedPipelineMode": "Integrated",
-                "virtualApplications": [
-                    {
-                        "virtualPath": "/",
-                        "physicalPath": "site\\wwwroot",
-                        "preloadEnabled": false
-                    }
-                ],
-                "loadBalancing": "LeastRequests",
-                "experiments": {
-                    "rampUpRules": []
-                },
-                "autoHealEnabled": false,
-                "vnetRouteAllEnabled": false,
-                "vnetPrivatePortsCount": 0,
-                "localMySqlEnabled": false,
-                "managedServiceIdentityId": 1600,
-                "ipSecurityRestrictions": [
-                    {
-                        "ipAddress": "Any",
-                        "action": "Allow",
-                        "priority": 1,
-                        "name": "Allow all",
-                        "description": "Allow all access"
-                    }
-                ],
-                "scmIpSecurityRestrictions": [
-                    {
-                        "ipAddress": "Any",
-                        "action": "Allow",
-                        "priority": 1,
-                        "name": "Allow all",
-                        "description": "Allow all access"
-                    }
-                ],
-                "scmIpSecurityRestrictionsUseMain": false,
-                "http20Enabled": false,
-                "minTlsVersion": "1.2",
-                "scmMinTlsVersion": "1.0",
-                "ftpsState": "AllAllowed",
-                "preWarmedInstanceCount": 0,
-                "functionAppScaleLimit": 0,
-                "functionsRuntimeScaleMonitoringEnabled": false,
-                "minimumElasticInstanceCount": 1,
-                "azureStorageAccounts": {}
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/deployments",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/070e0a1aa51e46788de9cbe4ead74645')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "status": 4,
-                "author_email": "N/A",
-                "author": "N/A",
-                "deployer": "GITHUB_ZIP_DEPLOY",
-                "message": "{\"type\":\"deployment\",\"sha\":\"26a5231a7c273a2a0e815be8c0ee477f88f1b67b\",\"repoName\":\"long20p/TextCan\",\"slotName\":\"production\",\"commitMessage\":\"Modify workflow files\"}",
-                "start_time": "2021-11-27T20:31:49.811892Z",
-                "end_time": "2021-11-27T20:31:52.0772972Z",
-                "active": true
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/deployments",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/3e5c19b444ca4a22bb91d580c7b9377c')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "status": 4,
-                "author_email": "N/A",
-                "author": "N/A",
-                "deployer": "GITHUB_ZIP_DEPLOY",
-                "message": "{\"type\":\"deployment\",\"sha\":\"e93d406c1ddfe81f5317012a17d0ca8be1e235f6\",\"repoName\":\"long20p/TextCan\",\"slotName\":\"production\",\"commitMessage\":\"Set up workflow for deploying Content API\"}",
-                "start_time": "2021-11-25T20:28:59.2677239Z",
-                "end_time": "2021-11-25T20:29:04.7863333Z",
-                "active": false
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/deployments",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '/f9d7000f9b80449db4928de3f499a85e')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "status": 4,
-                "author_email": "N/A",
-                "author": "VS Code",
-                "deployer": "ZipDeploy",
-                "message": "Created via a push deployment",
-                "start_time": "2021-11-25T20:40:28.0641557Z",
-                "end_time": "2021-11-25T20:40:32.0810045Z",
-                "active": true
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/deployments",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_web_contentapi_textcan_dev_name'), '/fbf228e432e54700b1118c37ba7c3ed0')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_web_contentapi_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "status": 4,
-                "author_email": "N/A",
-                "author": "N/A",
-                "deployer": "GITHUB_ZIP_DEPLOY",
-                "message": "{\"type\":\"deployment\",\"sha\":\"e93d406c1ddfe81f5317012a17d0ca8be1e235f6\",\"repoName\":\"long20p/TextCan\",\"slotName\":\"production\",\"commitMessage\":\"Set up workflow for deploying Content API\"}",
-                "start_time": "2021-11-27T19:26:25.6261989Z",
-                "end_time": "2021-11-27T19:26:28.81033Z",
-                "active": false
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites/functions",
-            "apiVersion": "2021-02-01",
-            "name": "[concat(parameters('sites_func_keyservice_textcan_dev_name'), '/KeyGenerator')]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', parameters('sites_func_keyservice_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "script_root_path_href": "https://func-keyservice-textcan-dev.azurewebsites.net/admin/vfs/site/wwwroot/KeyGenerator/",
-                "script_href": "https://func-keyservice-textcan-dev.azurewebsites.net/admin/vfs/site/wwwroot/bin/KeyGenerationServiceServerless.dll",
-                "config_href": "https://func-keyservice-textcan-dev.azurewebsites.net/admin/vfs/site/wwwroot/KeyGenerator/function.json",
-                "test_data_href": "https://func-keyservice-textcan-dev.azurewebsites.net/admin/vfs/data/Functions/sampledata/KeyGenerator.dat",
-                "href": "https://func-keyservice-textcan-dev.azurewebsites.net/admin/functions/KeyGenerator",
-                "config": {},
-                "invoke_url_template": "https://func-keyservice-textcan-dev.azurewebsites.net/api/keygenerator",
-                "language": "DotNetAssembly",
-                "isDisabled": false
-            }
-        },
-        {
-            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
-            "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/ApiServerDb/Content')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'ApiServerDb')]",
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "resource": {
-                    "id": "Content",
-                    "indexingPolicy": {
-                        "indexingMode": "consistent",
-                        "automatic": true,
-                        "includedPaths": [
-                            {
-                                "path": "/*"
-                            }
-                        ],
-                        "excludedPaths": [
-                            {
-                                "path": "/\"_etag\"/?"
-                            }
-                        ]
-                    },
-                    "partitionKey": {
-                        "paths": [
-                            "/Key"
-                        ],
-                        "kind": "Hash"
-                    },
-                    "conflictResolutionPolicy": {
-                        "mode": "LastWriterWins",
-                        "conflictResolutionPath": "/_ts"
-                    }
+                    "id": "[variables('content-db-name')]"
                 }
             }
         },
         {
             "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
             "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/TextCanContentDB/Content')]",
+            "name": "[concat(variables('cosmos_db_account_name'), '/', variables('content-db-name'),'/', variables('content-container-name'))]",
             "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'TextCanContentDB')]",
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', variables('cosmos_db_account_name'), variables('content-db-name'))]"
             ],
             "properties": {
                 "resource": {
-                    "id": "Content",
+                    "id": "[variables('content-container-name')]",
                     "indexingPolicy": {
                         "indexingMode": "consistent",
                         "automatic": true,
@@ -1327,12 +133,11 @@
             }
         },
         {
-            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughputSettings",
-            "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/TextCanContentDB/default')]",
+            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/throughputSettings",
+            "apiVersion": "2021-01-15",
+            "name": "[concat(variables('cosmos_db_account_name'), '/', variables('content-db-name'), '/', variables('content-container-name'), '/default')]",
             "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'TextCanContentDB')]",
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers', variables('cosmos_db_account_name'), variables('content-db-name'), variables('content-container-name'))]"
             ],
             "properties": {
                 "resource": {
@@ -1343,68 +148,324 @@
                 }
             }
         },
+
+        /********************** Cosmos DB end **********************/
+
+
+        /********************** Key Service Func App Server Farm start **********************/
         {
-            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
-            "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default/azure-webjobs-hosts')]",
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('plan_func_key_service_name')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Y1",
+                "tier": "Dynamic",
+                "size": "Y1",
+                "family": "Y",
+                "capacity": 0
+            },
+            "kind": "functionapp",
+            "properties": {
+                "perSiteScaling": false,
+                "elasticScaleEnabled": false,
+                "maximumElasticWorkerCount": 1,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+
+        /********************** Key Service Func App Server Farm end **********************/
+
+
+        /********************** Key Service Func App start **********************/
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('func_key_service_name')]",
+            "location": "[variables('location')]",
+            "kind": "functionapp",
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_stkeysvcfunctextcandev_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
+                "[resourceId('Microsoft.Web/serverfarms', variables('plan_func_key_service_name'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storage_account_key_service_func_name'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appi_func_key_service_name'))]"
             ],
             "properties": {
-                "immutableStorageWithVersioning": {
-                    "enabled": false
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('plan_func_key_service_name'))]",
+                "clientAffinityEnabled": false,
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appi_func_key_service_name')), '2020-02-02').InstrumentationKey]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storage_account_key_service_func_name'),';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storage_account_key_service_func_name')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+                            "name": "WEBSITE_RUN_FROM_PACKAGE",
+                            "value": "1"
+                        }
+                    ],
+                    "netFrameworkVersion": "v5.0"
                 },
-                "defaultEncryptionScope": "$account-encryption-key",
-                "denyEncryptionScopeOverride": false,
-                "publicAccess": "None"
+                "keyVaultReferenceIdentity": "SystemAssigned"
             }
         },
+
+        /********************** Key Service Func App end **********************/
+
+
+        /********************** Key Service Func App Storage Account start **********************/
         {
-            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default/azure-webjobs-secrets')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('storageAccounts_stkeysvcfunctextcandev_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
-            ],
+            "name": "[variables('storage_account_key_service_func_name')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "Storage",
             "properties": {
-                "immutableStorageWithVersioning": {
-                    "enabled": false
+                "minimumTlsVersion": "TLS1_2",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
                 },
-                "defaultEncryptionScope": "$account-encryption-key",
-                "denyEncryptionScopeOverride": false,
-                "publicAccess": "None"
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
-            "apiVersion": "2021-06-01",
-            "name": "[concat(parameters('storageAccounts_stkeysvcfunctextcandev_name'), '/default/func-keyservice-textcan-dev9d57')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('storageAccounts_stkeysvcfunctextcandev_name'), 'default')]",
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccounts_stkeysvcfunctextcandev_name'))]"
-            ],
-            "properties": {
-                "accessTier": "TransactionOptimized",
-                "shareQuota": 5120,
-                "enabledProtocols": "SMB"
-            }
-        },
-        {
-            "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/throughputSettings",
-            "apiVersion": "2021-07-01-preview",
-            "name": "[concat(parameters('databaseAccounts_cosmos_textcan_dev_name'), '/ApiServerDb/Content/default')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'ApiServerDb', 'Content')]",
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts/sqlDatabases', parameters('databaseAccounts_cosmos_textcan_dev_name'), 'ApiServerDb')]",
-                "[resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('databaseAccounts_cosmos_textcan_dev_name'))]"
-            ],
-            "properties": {
-                "resource": {
-                    "throughput": 400
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "keyType": "Account",
+                            "enabled": true
+                        },
+                        "blob": {
+                            "keyType": "Account",
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
                 }
             }
+        },
+
+        /********************** Key Service Func App Storage Account end **********************/
+
+
+        /********************** Key Service Func App App Insights start **********************/
+        {
+            "type": "microsoft.insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('appi_func_key_service_name')]",
+            "location": "[variables('location')]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "RetentionInDays": 90,
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logan_appi_func_key_service_name'))]",
+                "IngestionMode": "LogAnalytics",
+                "publicNetworkAccessForIngestion": "Enabled",
+                "publicNetworkAccessForQuery": "Enabled"
+            }
+        },
+        {
+            "name": "[variables('logan_appi_func_key_service_name')]",
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "apiVersion": "2020-10-01",
+            "location": "[variables('location')]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                },
+                "retentionInDays": 120,
+                "features": {
+                    "searchVersion": 1,
+                    "legacy": 0,
+                    "enableLogAccessUsingOnlyResourcePermissions": true
+                }
+            }
+        },
+
+        /********************** Key Service Func App App Insights end **********************/
+
+
+        /********************** Key Vault start **********************/
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[variables('kv_name')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "Standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [],
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": false,
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 90,
+                "enableRbacAuthorization": false
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[concat(variables('kv_name'), '/', variables('content-db-key-secret-name'))]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[listKeys(variables('cosmos-acc-resource-id'), '2021-07-01-preview').primaryMasterKey]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-06-01-preview",
+            "name": "[concat(variables('kv_name'), '/', variables('func-key-secret-name'))]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]"
+            ],
+            "properties": {
+                "attributes": {
+                    "enabled": true
+                },
+                "value": "[concat('https://', variables('func_key_service_name'),'.azurewebsites.net/api/', variables('func-keygen-name'),'?code=', listkeys(concat(resourceId('Microsoft.Web/sites', variables('func_key_service_name')), '/host/default'),'2021-02-01').functionKeys.default)]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(variables('kv_name'), '/add')]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]",
+                "[resourceId('Microsoft.Web/sites', variables('app_content_api_name'))]"
+            ],
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('app_content_api_name')), '2019-08-01', 'full').identity.principalId]",
+                        "permissions": {
+                            "secrets": [ "Get", "List" ]
+                        }
+                    }
+                ]
+            }
+        },
+
+        /********************** Key Vault end **********************/
+
+
+        /********************** Content API Server Farm start **********************/
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('plan_content_api_name')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "family": "S",
+                "capacity": 1
+            },
+            "kind": "linux",
+            "properties": {
+                "reserved": true,
+                "perSiteScaling": false,
+                "elasticScaleEnabled": false,
+                "maximumElasticWorkerCount": 1,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0,
+                "zoneRedundant": false
+            }
+        },
+
+        /********************** Content API Server Farm end **********************/
+
+
+        /********************** Content API start **********************/
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('app_content_api_name')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('plan_content_api_name'))]",
+                "[variables('cosmos-acc-resource-id')]",
+                "[variables('db-key-secret-resource-id')]",
+                "[variables('func-key-secret-resource-id')]"
+            ],
+            "tags": {},
+            "kind": "app,linux",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('plan_content_api_name'))]",
+                "reserved": true,
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "Database__EndpointUrl",
+                            "value": "[reference(variables('cosmos-acc-resource-id'), '2021-07-01-preview').documentEndpoint]"
+                        },
+                        {
+                            "name": "Database__Key",
+                            "value": "[reference(variables('db-key-secret-resource-id')).secretUri]"
+                        },
+                        {
+                            "name": "KeyService__GetKeyUrl",
+                            "value": "[reference(variables('func-key-secret-resource-id')).secretUri]"
+                        }
+                    ],
+                    "numberOfWorkers": 1,
+                    "linuxFxVersion": "DOTNETCORE|5.0",
+                    "alwaysOn": false
+                },
+                "keyVaultReferenceIdentity": "SystemAssigned"
+            }
+        },
+
+        /********************** Content API start **********************/
+
+
+        /********************** UI Static Web App start **********************/
+        {
+            "type": "Microsoft.Web/staticSites",
+            "apiVersion": "2021-02-01",
+            "name": "[variables('static_ui_name')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Free",
+                "tier": "Free"
+            },
+            "properties": {
+            }
         }
+
+        /********************** UI Static Web App end **********************/
     ]
 }
