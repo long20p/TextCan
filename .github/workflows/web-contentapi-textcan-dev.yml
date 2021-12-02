@@ -1,5 +1,6 @@
 name: Build and deploy Content API to Linux WebApp web-contentapi-textcan-dev
 on:
+  workflow_dispatch:
   push:
     branches:
     - master
