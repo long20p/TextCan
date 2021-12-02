@@ -8,7 +8,7 @@ on:
     - 'TextCan_Server/**'
     - '.github/workflows/web-contentapi-textcan-dev.yml'
 env:
-  AZURE_WEBAPP_NAME: web-contentapi-textcan-dev
+  AZURE_WEBAPP_NAME: app-contentapi-textcan-dev
   AZURE_WEBAPP_PACKAGE_PATH: TextCan_Server/TextCan.Server/publish
   AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.web_contentapi_textcan_dev_04ba }}
   CONFIGURATION: Release
