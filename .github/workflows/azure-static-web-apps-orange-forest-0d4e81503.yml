@@ -1,6 +1,7 @@
 name: Build and deploy TextCan Angular UI app to Azure static web app
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
