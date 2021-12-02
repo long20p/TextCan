@@ -211,10 +211,6 @@
                         {
                             "name": "AzureWebJobsStorage",
                             "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storage_account_key_service_func_name'),';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storage_account_key_service_func_name')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
-                        },
-                        {
-                            "name": "WEBSITE_RUN_FROM_PACKAGE",
-                            "value": "1"
                         }
                     ],
                     "netFrameworkVersion": "v5.0"
@@ -329,7 +325,8 @@
             "name": "[concat(variables('kv_name'), '/', variables('content-db-key-secret-name'))]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]"
+                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]",
+                "[variables('cosmos-acc-resource-id')]"
             ],
             "properties": {
                 "attributes": {
@@ -344,7 +341,8 @@
             "name": "[concat(variables('kv_name'), '/', variables('func-key-secret-name'))]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]"
+                "[resourceId('Microsoft.KeyVault/vaults', variables('kv_name'))]",
+                "[resourceId('Microsoft.Web/sites', variables('func_key_service_name'))]"
             ],
             "properties": {
                 "attributes": {
@@ -434,11 +432,11 @@
                         },
                         {
                             "name": "Database__Key",
-                            "value": "[reference(variables('db-key-secret-resource-id')).secretUri]"
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(variables('db-key-secret-resource-id')).secretUri, '/)')]"
                         },
                         {
                             "name": "KeyService__GetKeyUrl",
-                            "value": "[reference(variables('func-key-secret-resource-id')).secretUri]"
+                            "value": "[concat('@Microsoft.KeyVault(SecretUri=', reference(variables('func-key-secret-resource-id')).secretUri, '/)')]"
                         }
                     ],
                     "numberOfWorkers": 1,
