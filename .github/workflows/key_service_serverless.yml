@@ -8,7 +8,11 @@ on:
     - '.github/workflows/key_service_serverless.yml'
   pull_request:
     branches: [ master ]
-
+    
+env:
+  AZURE_FUNCTIONAPP_NAME: 'func-keyservice-textcan-dev'
+  AZURE_FUNCTIONAPP_ROOT_PATH: './KeyGenerationServiceServerless'
+  
 jobs:
   build:
 
@@ -21,11 +25,11 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      working-directory: ./KeyGenerationServiceServerless
+      working-directory: ${{ env.AZURE_FUNCTIONAPP_ROOT_PATH }}
       run: dotnet restore
     - name: Build
-      working-directory: ./KeyGenerationServiceServerless
-      run: dotnet build --no-restore
+      working-directory: ${{ env.AZURE_FUNCTIONAPP_ROOT_PATH }}
+      run: dotnet build --no-restore --configuration Release --output ./publish
       
   deploy:
     runs-on: ubuntu-latest
@@ -34,6 +38,8 @@ jobs:
       uses: Azure/functions-action@v1.4.4
       with:
         # Name of the Azure Function App
-        app-name: 'func-keygen-textcan-dev'
+        app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         # Path to package or folder. *.zip or a folder to deploy
-        package: ./KeyGenerationServiceServerless
+        package: '${{ env.AZURE_FUNCTIONAPP_ROOT_PATH }}/publish'
+        # Function App publish profile
+        publish-profile: ${{ secrets.FUNC_KEYSVC_TEXTCAN_DEV_PUB_PROFILE }}
