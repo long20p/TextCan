@@ -6,7 +6,7 @@ on:
     - master
     paths:
     - 'TextCan_Server/**'
-    - '.github/workflows/web-contentapi-textcan-dev.yml'
+    - '.github/workflows/app-contentapi-textcan-dev.yml'
 env:
   AZURE_WEBAPP_NAME: app-contentapi-textcan-dev
   AZURE_WEBAPP_PACKAGE_PATH: TextCan_Server/TextCan.Server/publish
