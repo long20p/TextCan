@@ -31,6 +31,11 @@ jobs:
     - name: Build
       working-directory: ${{ env.AZURE_FUNCTIONAPP_ROOT_PATH }}
       run: dotnet build --no-restore --configuration Release --output ./publish
+    - name: Azure Login
+      uses: Azure/login@v1
+      with:
+        # Paste output of `az ad sp create-for-rbac` as value of secret variable
+        creds: ${{ secrets.AZURE_DEPLOY_CREDENTIALS }}
     - name: Deploy
       uses: Azure/functions-action@v1.4.4
       with:
@@ -38,6 +43,3 @@ jobs:
         app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
         # Path to package or folder. *.zip or a folder to deploy
         package: '${{ env.AZURE_FUNCTIONAPP_ROOT_PATH }}/publish'
-        # Function App publish profile
-        publish-profile: ${{ secrets.FUNC_KEYSVC_TEXTCAN_DEV_PUB_PROFILE }}
-    
