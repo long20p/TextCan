@@ -36,9 +36,28 @@ namespace TextCan.Server.Repository.Azure
             return await Container.ReadItemAsync<T>(key, new PartitionKey(key));
         }
 
-        public Task<IEnumerable<T>> Where(Expression<Func<T, bool>> predicate)
+        public async Task<IEnumerable<T>> Where(Expression<Func<T, bool>> predicate)
         {
             throw new NotImplementedException();
+        }
+
+        public async IAsyncEnumerable<T> Where(string sqlQuery)
+        {
+            var queryDef = new QueryDefinition(sqlQuery);
+            var resultSet = Container.GetItemQueryIterator<T>(queryDef);
+            while (resultSet.HasMoreResults)
+            {
+                var currentSet = await resultSet.ReadNextAsync();
+                foreach (var item in currentSet)
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        public async Task Delete(string key)
+        {
+            await Container.DeleteItemAsync<T>(key, new PartitionKey(key));
         }
     }
 }

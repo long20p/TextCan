@@ -12,5 +12,7 @@ namespace TextCan.Server.Repository
         Task Add(T item);
         Task<T> GetItem(string key);
         Task<IEnumerable<T>> Where(Expression<Func<T, bool>> predicate);
+        IAsyncEnumerable<T> Where(string sqlQuery);
+        Task Delete(string key);
     }
 }

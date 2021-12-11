@@ -20,6 +20,11 @@ namespace TextCan.Server.Repository.AWS
             await Context.Context.SaveAsync(item);
         }
 
+        public Task Delete(string key)
+        {
+            throw new NotImplementedException();
+        }
+
         public abstract Task EnsureTable();
 
         public async Task<T> GetItem(string key)
@@ -28,6 +33,11 @@ namespace TextCan.Server.Repository.AWS
         }
 
         public Task<IEnumerable<T>> Where(Expression<Func<T, bool>> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IAsyncEnumerable<T> Where(string sqlQuery)
         {
             throw new NotImplementedException();
         }
