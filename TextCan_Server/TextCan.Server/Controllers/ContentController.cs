@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -16,10 +17,13 @@ namespace TextCan.Server.Controllers
     {
         private ILogger<ContentController> logger;
         private IContentService contentService;
-        public ContentController(IContentService contentService, ILogger<ContentController> logger)
+        private TelemetryClient telemetryClient;
+
+        public ContentController(IContentService contentService, ILogger<ContentController> logger, TelemetryClient telemetryClient)
         {
             this.contentService = contentService;
             this.logger = logger;
+            this.telemetryClient = telemetryClient;
         }
 
         [HttpPost("create")]
@@ -27,11 +31,14 @@ namespace TextCan.Server.Controllers
         {
             try
             {
-                return await contentService.CreateContent(model);
+                var key = await contentService.CreateContent(model);
+                telemetryClient.TrackEvent("Content created", new Dictionary<string, string> { { "contentKey", key } });
+                return key;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Cannot set content");
+                telemetryClient.TrackException(ex);
                 throw;
             }
         }
