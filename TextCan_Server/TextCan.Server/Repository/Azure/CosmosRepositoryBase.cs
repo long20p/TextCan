@@ -22,7 +22,7 @@ namespace TextCan.Server.Repository.Azure
 
         public virtual async Task EnsureTable()
         {
-            var response = await Context.Client.CreateDatabaseIfNotExistsAsync("ApiServerDb");
+            var response = await Context.Client.CreateDatabaseIfNotExistsAsync("TextCanContentDB");
             Database = response.Database;
         }
 
