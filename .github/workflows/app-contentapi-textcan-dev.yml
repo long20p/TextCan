@@ -12,15 +12,15 @@ env:
   AZURE_WEBAPP_PACKAGE_PATH: TextCan_Server/TextCan.Server/publish
   AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.web_contentapi_textcan_dev_04ba }}
   CONFIGURATION: Release
-  DOTNET_CORE_VERSION: 5.0.x
+  DOTNET_CORE_VERSION: 8.0.x
   WORKING_DIRECTORY: TextCan_Server/TextCan.Server
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
     - name: Restore
@@ -32,17 +32,16 @@ jobs:
     - name: Publish
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
     - name: Azure Login
-      uses: Azure/login@v1
+      uses: azure/login@v2
       with:
-        # Paste output of `az ad sp create-for-rbac` as value of secret variable
         creds: ${{ secrets.AZURE_DEPLOY_CREDENTIALS }}
     - name: Deploy to Azure WebApp
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
     - name: Publish Artifacts
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v4
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
