@@ -1,23 +1,21 @@
 using System;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
+using System.Net;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace TextCan.KeyGenerationService
 {
     public static class KeyGenerator
     {
-        private static string Characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        private static readonly string Characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-        [FunctionName("KeyGenerator")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+        [Function("KeyGenerator")]
+        public static async Task<HttpResponseData> Run(
+            [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req,
             ILogger log)
         {
             log.LogInformation("Generating unique key...");
@@ -29,7 +27,12 @@ namespace TextCan.KeyGenerationService
                 strBuilder.Append(Characters[rand.Next(Characters.Length)]);
             }
 
-            return new JsonResult(new { key = strBuilder.ToString() });
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            response.Headers.Add("Content-Type", "application/json");
+            
+            await response.WriteStringAsync(JsonSerializer.Serialize(new { key = strBuilder.ToString() }));
+            
+            return response;
         }
     }
 }

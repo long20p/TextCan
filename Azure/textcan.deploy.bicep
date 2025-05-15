@@ -295,6 +295,10 @@ resource keyServiceResource 'Microsoft.Web/sites@2022-09-01' = {
           name: 'AzureWebJobsStorage'
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountKeyServiceName};AccountKey=${storageAccountKeyServiceResource.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
         }
+        {
+          name: 'CosmosContent_DOCUMENTDB'
+          value: 'AccountEndpoint=${cosmosDbAccountResource.properties.documentEndpoint};AccountKey=${listKeys(cosmosAccResourceId, '2023-04-15').primaryMasterKey};'
+        }
       ]
     }
     keyVaultReferenceIdentity: 'SystemAssigned'

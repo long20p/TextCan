@@ -17,6 +17,8 @@ param storageAccountName string
 param storageAccountKey string
 param functionAppName string
 param funcKegenName string
+param keyVaultName string
+param cosmosDbKeySecretName string
 
 // Resource names
 var planKeyServiceName = 'plan-keyservice-${namingPrefix}-${namingSuffix}'
@@ -123,6 +125,10 @@ resource keyServiceResource 'Microsoft.Web/sites@2022-09-01' = {
         {
           name: 'AzureWebJobsStorage'
           value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${storageAccountKey};EndpointSuffix=core.windows.net'
+        }
+        {
+          name: 'CosmosContent_DOCUMENTDB'
+          value: '@Microsoft.KeyVault(SecretUri=https://${keyVaultName}.vault.azure.net/secrets/${cosmosDbKeySecretName})'
         }
       ]
     }
