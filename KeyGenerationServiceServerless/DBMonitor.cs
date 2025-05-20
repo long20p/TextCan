@@ -1,43 +1,44 @@
 using System;
 using System.Text;
+using System.Text.Json;
 using System.Collections.Generic;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
 namespace TextCan.Monitors
 {
     public static class DBMonitor
-    {
-        [FunctionName("DBMonitor")]
-        public static void Run([CosmosDBTrigger(
+    {          
+        [Function("DBMonitor")]
+        [CosmosDBOutput(
             databaseName: "TextCanContentDB",
-            collectionName: "Content",
-            ConnectionStringSetting = "CosmosContent_DOCUMENTDB",
-            LeaseCollectionName = "leases",
-            LeaseCollectionPrefix = "ContentEventMonitor",
-            CreateLeaseCollectionIfNotExists = true)]IReadOnlyList<Document> input,
-            			[CosmosDB(
-			                databaseName: "TextCanContentDB",
-			                collectionName: "ItemLogs",
-                ConnectionStringSetting = "CosmosContent_DOCUMENTDB")] out dynamic document,
+            containerName: "ItemLogs",
+            Connection = "CosmosContent_DOCUMENTDB")]
+        public static object Run(
+            [CosmosDBTrigger(
+            databaseName: "TextCanContentDB",
+            containerName: "Content",
+            Connection = "CosmosContent_DOCUMENTDB",
+            LeaseContainerName = "leases",
+            LeaseContainerPrefix = "ContentEventMonitor",
+            CreateLeaseContainerIfNotExists = true)] IReadOnlyList<JsonElement> input,
             ILogger log)
         {
             if (input != null && input.Count > 0)
             {
                 log.LogInformation("Documents modified " + input.Count);
-                log.LogInformation("First document Id " + input[0].Id);
-            }
-
-            var logText = new StringBuilder();
+                log.LogInformation("First document Id " + input[0].GetProperty("id").GetString());
+            }            var logText = new StringBuilder();
             foreach (var item in input)
             {
-                logText.Append(item.Id);
-                logText.Append(",");
+                if (item.TryGetProperty("id", out JsonElement idElement))
+                {
+                    logText.Append(idElement.GetString());
+                    logText.Append(",");
+                }
             }
 
-            document = new { id = "LogId", Text = logText.ToString() };
+            return new { id = Guid.NewGuid().ToString(), Text = logText.ToString() };
         }
     }
 }

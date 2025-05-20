@@ -84,6 +84,8 @@ module keyGenerationService 'modules/functionapp.bicep' = {
     tags: commonTags
     storageAccountName: storageAccountName
     storageAccountKey: storageAccountKey
+    keyVaultName: keyVaultName
+    cosmosDbKeySecretName: contentDbKeySecretName    
   }
 }
 
@@ -137,6 +139,15 @@ module keyVaultAccess 'modules/keyvaultaccess.bicep' = {
   params: {
     keyVaultName: keyVaultName
     principalId: contentApi.outputs.contentApiPrincipalId
+    tenantId: subscription().tenantId
+  }
+}
+
+module keyVaultAccessFn 'modules/keyvaultaccess.bicep' = {
+  name: 'keyVaultAccess-FunctionApp'
+  params: {
+    keyVaultName: keyVaultName
+    principalId: keyGenerationService.outputs.functionAppPrincipalId
     tenantId: subscription().tenantId
   }
 }
