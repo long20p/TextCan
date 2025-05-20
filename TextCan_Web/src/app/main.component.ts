@@ -1,7 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ContentService } from './services/content.service'
+import { ContentService } from './services/content.service';
+
+interface ContentForm {
+  text: string;
+}
 
 @Component({
   selector: 'app-main',
@@ -15,22 +19,23 @@ export class MainComponent implements OnInit {
               private route: ActivatedRoute,
               private router: Router) { }
 
-  contentForm = this.formBuilder.group({
+  contentForm: FormGroup = this.formBuilder.group({
     text: ['']
   });
 
-  ngOnInit() {
+  ngOnInit(): void {
   }
 
-  onSubmit() {
-    console.log(this.contentForm.value);
-    this.contentService.createContent(this.contentForm.value).subscribe({
-      next: key => {
+  onSubmit(): void {
+    const formValue = this.contentForm.value as ContentForm;
+    console.log(formValue);
+    this.contentService.createContent(formValue).subscribe({
+      next: (key: string) => {
         console.log(key);
         this.router.navigate([key]);
       },
-      error: message => console.error(message)
-    })
+      error: (message: any) => console.error(message)
+    });
   }
 
 }

@@ -9,16 +9,18 @@ import { ContentService } from './services/content.service';
 })
 export class ReadOnlyComponent implements OnInit {
 
-  contentText: string;
+  contentText: string = '';
 
   constructor(private route: ActivatedRoute, private contentService: ContentService) { }
 
-  ngOnInit() {
-    var key = this.route.snapshot.paramMap.get('uniqueKey');
-    this.contentService.getContent(key).subscribe({
-      next: content => this.contentText = content,
-      error: message => console.error(message)
-    })
+  ngOnInit(): void {
+    const key = this.route.snapshot.paramMap.get('uniqueKey');
+    if (key) {
+      this.contentService.getContent(key).subscribe({
+        next: (content: string) => this.contentText = content,
+        error: (message: any) => console.error(message)
+      });
+    }
   }
 
 }
