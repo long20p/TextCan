@@ -74,11 +74,14 @@ namespace TextCan.Server
             {
                 throw new ApplicationException($"Unknown host provider: {hostProvider}");
             }
-            
+
             services.AddSingleton<IUniqueKeyService, UniqueKeyService>();
             services.AddSingleton<IContentService, ContentService>();
             services.AddSingleton<DbInitializer>();
             services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
+            
+            // Add health checks
+            services.AddHealthChecks();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -101,14 +104,14 @@ namespace TextCan.Server
             // Init DB
             app.ApplicationServices.GetService(typeof(DbInitializer));
 
-            //app.UseHttpsRedirection();
-
+            //app.UseHttpsRedirection();            
             app.UseRouting();
             app.UseCors(CorsPolicy);
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks("/health");
             });
         }
     }
