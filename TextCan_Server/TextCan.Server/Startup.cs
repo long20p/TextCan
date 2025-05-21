@@ -41,17 +41,29 @@ namespace TextCan.Server
             //var dbConfig = Configuration.GetSection("Database").Get<DbConfig>();
             //dbConfig.EndpointUrl = File.ReadAllText("db.cfg");
             //var keySvcConfig = Configuration.GetSection("KeyService").Get<KeyServiceConfig>();
-            //keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");
-
+            //keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");            
             services.AddCors(options =>
             {
-                //var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
                 options.AddPolicy(CorsPolicy, builder =>
-                    builder
-                    //.WithOrigins(allowedOrigins)
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader());
+                {
+                    // If allowedOrigins is configured and doesn't contain "*", use explicit origins
+                    if (allowedOrigins != null && !allowedOrigins.Contains("*"))
+                    {
+                        builder.WithOrigins(allowedOrigins)
+                               .AllowAnyMethod()
+                               .AllowAnyHeader()
+                               .WithExposedHeaders("Access-Control-Allow-Origin")
+                               .SetIsOriginAllowedToAllowWildcardSubdomains();
+                    }
+                    else
+                    {
+                        // Fallback to allow any origin
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    }
+                });
             });
 
             services.AddControllers();
@@ -104,6 +116,7 @@ namespace TextCan.Server
             // Init DB
             app.ApplicationServices.GetService(typeof(DbInitializer));
 
+            
             //app.UseHttpsRedirection();            
             app.UseRouting();
             app.UseCors(CorsPolicy);

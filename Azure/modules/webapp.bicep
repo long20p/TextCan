@@ -127,14 +127,13 @@ resource appContentApiResource 'Microsoft.Web/sites@2022-09-01' = {
       numberOfWorkers: 1
       linuxFxVersion: 'DOTNETCORE|8.0'
       alwaysOn: true
-      http20Enabled: true      
+      http20Enabled: true
       minTlsVersion: '1.2'
       ftpsState: 'Disabled'
       healthCheckPath: '/health'
       cors: {
         allowedOrigins: [
-          'https://${staticUiName}.azurestaticapps.net'
-          'https://*.azurestaticapps.net'
+          '*'
         ]
       }
     }
