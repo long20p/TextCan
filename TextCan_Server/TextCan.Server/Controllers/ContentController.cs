@@ -57,5 +57,24 @@ namespace TextCan.Server.Controllers
                 throw;
             }
         }
+
+        // Handle OPTIONS requests for CORS preflight
+        [HttpOptions("create")]
+        [HttpOptions("get/{uniqueId}")]
+        public IActionResult HandleOptions()
+        {
+            var origin = Request.Headers["Origin"].ToString();
+            if (!string.IsNullOrEmpty(origin))
+            {
+                Response.Headers["Access-Control-Allow-Origin"] = origin;
+            }
+            else
+            {
+                Response.Headers["Access-Control-Allow-Origin"] = "*";
+            }
+            Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+            Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With";
+            return Ok();
+        }
     }
 }

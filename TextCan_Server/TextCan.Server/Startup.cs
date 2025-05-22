@@ -41,17 +41,29 @@ namespace TextCan.Server
             //var dbConfig = Configuration.GetSection("Database").Get<DbConfig>();
             //dbConfig.EndpointUrl = File.ReadAllText("db.cfg");
             //var keySvcConfig = Configuration.GetSection("KeyService").Get<KeyServiceConfig>();
-            //keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");
-
+            //keySvcConfig.GetKeyUrl = File.ReadAllText("key_svc.cfg");            
             services.AddCors(options =>
             {
-                //var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+                var allowedOrigins = Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
                 options.AddPolicy(CorsPolicy, builder =>
-                    builder
-                    //.WithOrigins(allowedOrigins)
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader());
+                {
+                    // If allowedOrigins is configured and doesn't contain "*", use explicit origins
+                    if (allowedOrigins != null && !allowedOrigins.Contains("*"))
+                    {
+                        builder.WithOrigins(allowedOrigins)
+                               .AllowAnyMethod()
+                               .AllowAnyHeader()
+                               .WithExposedHeaders("Access-Control-Allow-Origin")
+                               .SetIsOriginAllowedToAllowWildcardSubdomains();
+                    }
+                    else
+                    {
+                        // Fallback to allow any origin
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    }
+                });
             });
 
             services.AddControllers();
@@ -74,11 +86,14 @@ namespace TextCan.Server
             {
                 throw new ApplicationException($"Unknown host provider: {hostProvider}");
             }
-            
+
             services.AddSingleton<IUniqueKeyService, UniqueKeyService>();
             services.AddSingleton<IContentService, ContentService>();
             services.AddSingleton<DbInitializer>();
             services.AddApplicationInsightsTelemetry(Configuration["APPINSIGHTS_CONNECTIONSTRING"]);
+            
+            // Add health checks
+            services.AddHealthChecks();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -101,14 +116,15 @@ namespace TextCan.Server
             // Init DB
             app.ApplicationServices.GetService(typeof(DbInitializer));
 
-            //app.UseHttpsRedirection();
-
+            
+            //app.UseHttpsRedirection();            
             app.UseRouting();
             app.UseCors(CorsPolicy);
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHealthChecks("/health");
             });
         }
     }

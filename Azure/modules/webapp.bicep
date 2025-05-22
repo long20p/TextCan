@@ -120,6 +120,10 @@ resource appContentApiResource 'Microsoft.Web/sites@2022-09-01' = {
           value: appiContentApiResource.properties.ConnectionString
         }
         {
+          name: 'ApplicationInsights_ConnectionString'
+          value: appiContentApiResource.properties.ConnectionString
+        }
+        {
           name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
           value: '~3'
         }
@@ -133,7 +137,7 @@ resource appContentApiResource 'Microsoft.Web/sites@2022-09-01' = {
       healthCheckPath: '/health'
       cors: {
         allowedOrigins: [
-          'https://${staticUiName}.azurestaticapps.net'
+          '*'
         ]
       }
     }

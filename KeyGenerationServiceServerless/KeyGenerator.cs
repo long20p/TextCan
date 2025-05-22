@@ -16,8 +16,9 @@ namespace TextCan.KeyGenerationService
         [Function("KeyGenerator")]
         public static async Task<HttpResponseData> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req,
-            ILogger log)
+            FunctionContext executionContext)
         {
+            var log = executionContext.GetLogger("KeyGenerator");
             log.LogInformation("Generating unique key...");
 
             var rand = new Random();
