@@ -16,4 +16,4 @@ Start-Process dotnet -WorkingDirectory "./TextCan_Server/TextCan.Server" -Argume
 
 # Start website
 Write-Host Start website
-Start-Process ng -WorkingDirectory "./TextCan_Web" -ArgumentList "serve"
+Start-Process ng serve --open
