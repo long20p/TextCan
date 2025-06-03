@@ -13,29 +13,49 @@ using Polly;
 using Polly.CircuitBreaker;
 
 namespace TextCan.Server.Services
-{    public class UniqueKeyService : IUniqueKeyService
+{
+    public class UniqueKeyService : IUniqueKeyService
     {
         private ILogger<UniqueKeyService> logger;
         private HttpClient httpClient;
         private string keyServiceUrl;
-        private readonly IAsyncPolicy<HttpResponseMessage> circuitBreakerPolicy;
-
-        public UniqueKeyService(IOptions<KeyServiceConfig> config, IOptions<CircuitBreakerConfig> circuitBreakerConfig, ILogger<UniqueKeyService> logger)
+        private readonly IAsyncPolicy<HttpResponseMessage> retryCircuitBreakerPolicy;
+        public UniqueKeyService(IOptions<KeyServiceConfig> config, IOptions<ResilienceConfig> resilienceConfig, ILogger<UniqueKeyService> logger)
         {
             this.logger = logger;
             httpClient = new HttpClient();
-            httpClient.Timeout = circuitBreakerConfig.Value.Timeout;
+            httpClient.Timeout = resilienceConfig.Value.Timeout;
             keyServiceUrl = config.Value.GetKeyUrl;
             logger.LogInformation($"Key service address: {keyServiceUrl}");
 
+            // Configure retry policy with exponential backoff
+            var retryPolicy = Policy
+                .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
+                .Or<HttpRequestException>()
+                .Or<TaskCanceledException>()
+                .WaitAndRetryAsync(
+                    retryCount: resilienceConfig.Value.RetryCount,
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromMilliseconds(
+                        Math.Min(
+                            resilienceConfig.Value.RetryBaseDelay.TotalMilliseconds * Math.Pow(2, retryAttempt - 1),
+                            resilienceConfig.Value.RetryMaxDelay.TotalMilliseconds
+                        )
+                    ),
+                    onRetry: (outcome, timespan, retryCount, context) =>
+                    {
+                        logger.LogWarning("Key service retry attempt {RetryCount}. Waiting {Delay}ms before next attempt. Exception: {Exception}",
+                            retryCount, timespan.TotalMilliseconds,
+                            outcome.Exception?.Message ?? outcome.Result?.StatusCode.ToString());
+                    });
+
             // Configure circuit breaker policy
-            circuitBreakerPolicy = Policy
+            var circuitBreakerPolicy = Policy
                 .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
                 .Or<HttpRequestException>()
                 .Or<TaskCanceledException>()
                 .CircuitBreakerAsync(
-                    handledEventsAllowedBeforeBreaking: circuitBreakerConfig.Value.HandledEventsAllowedBeforeBreaking,
-                    durationOfBreak: circuitBreakerConfig.Value.DurationOfBreak,
+                    handledEventsAllowedBeforeBreaking: resilienceConfig.Value.HandledEventsAllowedBeforeBreaking,
+                    durationOfBreak: resilienceConfig.Value.DurationOfBreak,
                     onBreak: (exception, duration) =>
                     {
                         logger.LogWarning("Key service circuit breaker opened. Duration: {Duration}ms. Exception: {Exception}",
@@ -49,17 +69,19 @@ namespace TextCan.Server.Services
                     {
                         logger.LogInformation("Key service circuit breaker half-open - testing service availability");
                     });
-        }
 
+            // Combine retry and circuit breaker policies
+            // Circuit breaker wraps retry policy to prevent retries when circuit is open
+            retryCircuitBreakerPolicy = Policy.WrapAsync(circuitBreakerPolicy, retryPolicy);
+        }
         public async Task<string> GetUniqueKey()
         {
             try
             {
-                var response = await circuitBreakerPolicy.ExecuteAsync(async () =>
+                var response = await retryCircuitBreakerPolicy.ExecuteAsync(async () =>
                 {
                     return await httpClient.GetAsync(keyServiceUrl);
                 });
-
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();

@@ -36,7 +36,7 @@ namespace TextCan.Server
         public void ConfigureServices(IServiceCollection services)        {
             services.Configure<DbConfig>(Configuration.GetSection("Database"));
             services.Configure<KeyServiceConfig>(Configuration.GetSection("KeyService"));
-            services.Configure<CircuitBreakerConfig>(Configuration.GetSection("CircuitBreaker"));
+            services.Configure<ResilienceConfig>(Configuration.GetSection("Resilience"));
             var hostProvider = Configuration.GetValue<string>("HostProvider");
             //var dbConfig = Configuration.GetSection("Database").Get<DbConfig>();
             //dbConfig.EndpointUrl = File.ReadAllText("db.cfg");
