@@ -5,27 +5,33 @@ using System.Threading.Tasks;
 using TextCan.Server.Models;
 using TextCan.Server.Repository;
 using TextCan.Server.Repository.DbModels;
+using Microsoft.Extensions.Logging;
 
 namespace TextCan.Server.Services
-{
-    public class ContentService : IContentService
+{    public class ContentService : IContentService
     {
         private IContentRepository contentRepository;
         private IUniqueKeyService keyService;
+        private ILogger<ContentService> logger;
 
-        public ContentService(IContentRepository contentRepository, IUniqueKeyService keyService)
+        public ContentService(IContentRepository contentRepository, IUniqueKeyService keyService, ILogger<ContentService> logger)
         {
             this.contentRepository = contentRepository;
             this.keyService = keyService;
+            this.logger = logger;
         }
 
         public async Task<string> CreateContent(ContentModel content)
         {
             var key = await keyService.GetUniqueKey();
-            if (key ==null)
+            
+            // Fallback to GUID-based key if key service is unavailable
+            if (key == null)
             {
-                throw new InvalidOperationException("Cannot generate unique key");
+                key = GenerateFallbackKey();
+                logger.LogWarning("Key service unavailable, using fallback key generation: {Key}", key);
             }
+            
             var dbItem = new Content
             {
                 Id = key,
@@ -35,6 +41,14 @@ namespace TextCan.Server.Services
             };
             await contentRepository.Add(dbItem);
             return key;
+        }
+
+        private string GenerateFallbackKey()
+        {
+            // Generate a short, URL-friendly key using GUID
+            var guid = Guid.NewGuid().ToString("N");
+            // Take first 8 characters to keep it short and readable
+            return guid.Substring(0, 8);
         }
 
         public async Task<ContentModel> GetContent(string contentId)
